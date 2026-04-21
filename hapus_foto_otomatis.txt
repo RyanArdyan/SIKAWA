@@ -1,0 +1,96 @@
+Berikut adalah panduan yang sudah diperbaiki dan diperbarui sesuai dengan struktur Laravel 11/13 serta temuan teknis yang kita diskusikan tadi:
+
+---
+
+## Panduan Otomatisasi Penghapusan Foto Absen (3 Hari)
+
+Untuk menghapus foto secara otomatis, kita menggunakan fitur **Task Scheduling** Laravel. Karena Anda menggunakan **Laragon (Windows)**, sistem ini membutuhkan terminal yang aktif untuk menjalankan jadwal tersebut.
+
+### 1. Buat Perintah Custom (Artisan Command)
+Jalankan perintah ini di terminal Laragon untuk membuat file pengatur pembersihan:
+```bash
+php artisan make:command CleanupOldPhotos
+```
+
+### 2. Isi Logika Penghapusan
+Buka file `app/Console/Commands/CleanupOldPhotos.php`. Pastikan `$signature` sesuai dengan grup `app` agar mudah dipanggil.
+
+```php
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Models\Attendance;
+use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+
+class CleanupOldPhotos extends Command
+{
+    // Nama perintah yang akan dipanggil (Gunakan namespace app agar standar)
+    protected $signature = 'app:cleanup-old-photos';
+    protected $description = 'Menghapus foto absen dan datanya yang sudah lebih dari 3 hari';
+
+    public function handle()
+    {
+        // Cari data yang created_at nya lebih tua dari 3 hari yang lalu
+        $oldAttendances = Attendance::where('created_at', '<', Carbon::now()->subDays(3))->get();
+
+        if ($oldAttendances->isEmpty()) {
+            $this->info('Tidak ada foto lama yang perlu dihapus.');
+            return;
+        }
+
+        foreach ($oldAttendances as $attendance) {
+            // 1. Hapus file fisik dari storage public
+            if (Storage::disk('public')->exists($attendance->photo_path)) {
+                Storage::disk('public')->delete($attendance->photo_path);
+            }
+
+            // 2. Hapus baris data dari database
+            $attendance->delete();
+        }
+
+        $this->info(count($oldAttendances) . ' data lama berhasil dibersihkan dari server & database.');
+    }
+}
+```
+
+### 3. Daftarkan Jadwal (Scheduler)
+Buka file **`routes/console.php`** untuk mengatur waktu eksekusi otomatisnya.
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+// Menjalankan pembersihan setiap tengah malam (00:00)
+Schedule::command('app:cleanup-old-photos')->daily();
+```
+
+---
+
+### 4. Cara Menjalankan & Mengetes (Laragon/Windows)
+
+Ada dua cara untuk memastikan fitur ini berjalan:
+
+* **Uji Coba Manual (Kapan Saja):**
+    Gunakan perintah ini untuk menghapus data yang sudah memenuhi syarat (lebih dari 3 hari) secara instan:
+    ```bash
+    php artisan app:cleanup-old-photos
+    ```
+
+* **Otomatisasi Latar Belakang (Running Scheduler):**
+    1.  Buka **Laragon**.
+    2.  **Klik Kanan** pada tombol **Terminal**, pilih **Root**.
+    3.  Jalankan perintah: `php artisan schedule:work`.
+    4.  **Penting:** Biarkan jendela terminal ini tetap terbuka (boleh di-*minimize*). Terminal inilah yang bertugas mengecek jadwal setiap menit dan menjalankan perintah hapus foto pada tengah malam.
+
+---
+
+### Ringkasan Logika Waktu
+Jika hari ini tanggal **19 April**, maka:
+* Data tanggal **15 April** kebawah: **DIHAPUS**.
+* Data tanggal **17 April** keatas: **AMAN**.
+
+> **Catatan Admin:** Jika Anda ingin menyimpan foto untuk laporan bulanan, pastikan untuk mengunduh rekap foto sebelum memasuki hari ke-3, karena setelah itu file akan hilang permanen dari folder `storage/app/public/attendances`.
+
+Apakah ada bagian dari alur otomatisasi ini yang masih membingungkan?

@@ -1,0 +1,11 @@
+Warna sesuai logo kemenkes.
+Harus ada logo bkk dan logo kemenkes.
+Di jam pulang, para pegawai mengupload laporan pekerjaan nya.
+riwayat absen agar pegawai tau bahwa dia tau dia sudah absen.
+tambahkan input kerja di formulir pegawai.
+Koordinat alamat.
+
+laporan:
+nama, nip, tim kerja, jam masuk, jam pulang, titik lokasi.
+Laporan bisa hari ini, minggu dan bulanan dan tahunan.
+filter absensi berdasarkan tim kerja dalam satu bulan.
