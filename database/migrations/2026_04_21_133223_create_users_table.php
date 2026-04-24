@@ -13,10 +13,20 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+
+            // 1. Tambahkan ->nullable() agar kolom ini boleh kosong (NULL)
+            $table->unsignedBigInteger('tim_kerja_id')->nullable();
+
+            // 2. Ubah ->onDelete('cascade') menjadi ->onDelete('set null')
+            $table->foreign('tim_kerja_id')
+                ->references('id')
+                ->on('tim_kerja')
+                ->onDelete('set null');
+
             $table->string('nip')->unique();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('tim kerja', 50)->nullable();
+            $table->string('role')->default('pegawai');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
@@ -45,7 +55,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
     }
 };

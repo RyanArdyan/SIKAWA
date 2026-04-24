@@ -22,9 +22,16 @@ return new class extends Migration
             // Kolom untuk Pulang (Kita buat nullable karena saat masuk, data ini masih kosong)
             $table->timestamp('check_out_time')->nullable();
             $table->string('photo_path_out')->nullable(); // Foto saat pulang
+            $table->string('laporan_pdf')->nullable();
 
             // Status & Keterangan
             $table->enum('status', ['hadir', 'terlambat'])->default('hadir');
+
+            // Kita gunakan string agar aman, atau double untuk presisi tinggi
+            $table->string('latitude_in')->nullable();
+            $table->string('longitude_in')->nullable();
+            $table->string('latitude_out')->nullable();
+            $table->string('longitude_out')->nullable();
             $table->timestamps();
         });
     }

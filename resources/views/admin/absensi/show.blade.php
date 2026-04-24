@@ -5,7 +5,7 @@
 @section('content')
 <div class="container-fluid">
     <div class="mb-4">
-        <a href="{{ route('admin.laporan') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
+        <a href="{{ route('admin.absensi.report') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
             <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar Laporan
         </a>
     </div>
