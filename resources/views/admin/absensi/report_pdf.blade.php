@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Laporan Absensi Pegawai BKK Pontianak</title>
@@ -15,7 +16,8 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-            border-bottom: 3px double #000; /* Garis ganda khas surat dinas */
+            border-bottom: 3px double #000;
+            /* Garis ganda khas surat dinas */
             padding-bottom: 10px;
             position: relative;
         }
@@ -28,7 +30,8 @@
             height: 60px;
         }
 
-        .header h2, .header h3 {
+        .header h2,
+        .header h3 {
             margin: 0;
             text-transform: uppercase;
         }
@@ -51,7 +54,9 @@
             margin-top: 10px;
         }
 
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid #000;
         }
 
@@ -70,19 +75,19 @@
             font-size: 9pt;
         }
 
-        .text-center { text-align: center; }
-
-        .status-hadir { color: #198754; font-weight: bold; }
-        .status-terlambat { color: #dc3545; font-weight: bold; }
-
-        .footer {
-            margin-top: 30px;
-            float: right;
-            width: 250px;
+        .text-center {
             text-align: center;
         }
 
-        .space-tanda-tangan { height: 60px; }
+        .status-hadir {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .status-terlambat {
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -93,15 +98,18 @@
 
         <h3>KEMENTERIAN KESEHATAN REPUBLIK INDONESIA</h3>
         <h2>BALAI KEKARANTINAAN KESEHATAN KELAS I PONTIANAK</h2>
-        <p>Jl. Rahadi Usman No.2, Kota Pontianak, Kalimantan Barat</p>
+        <p>Jl. Jenderal Ahmad Yani, Arang Limbung, Kec. Sungai Raya, Kabupaten Kubu Raya, Kalimantan Barat 78391</p>
     </div>
 
     <table class="info-laporan" style="border: none;">
         <tr style="border: none;">
             <td style="border: none; width: 100px;"><strong>Jenis Laporan</strong></td>
             <td style="border: none;">: Rekapitulasi Absensi Pegawai</td>
-            {{-- PERBAIKAN: Gunakan variabel 'filter' jika dari Controller mengirim 'filter' --}}
-            <td style="border: none; text-align: right;"><strong>Periode:</strong> {{ ucfirst($filter ?? $periode) }}</td>
+            <td style="border: none; text-align: right;">
+                <strong>Periode:</strong>
+                {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }} s/d
+                {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}
+            </td>
         </tr>
         <tr style="border: none;">
             <td style="border: none;"><strong>Nama Pegawai</strong></td>
@@ -130,8 +138,10 @@
                     <td class="text-center">{{ \Carbon\Carbon::parse($a->created_at)->translatedFormat('d/m/Y') }}</td>
                     <td>{{ $a->user->name ?? 'User Terhapus' }}</td>
                     <td class="text-center">{{ $a->user->nip ?? '-' }}</td>
-                    <td class="text-center">{{ $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time)->format('H:i') : '-' }}</td>
-                    <td class="text-center">{{ $a->check_out_time ? \Carbon\Carbon::parse($a->check_out_time)->format('H:i') : '-' }}</td>
+                    <td class="text-center">
+                        {{ $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time)->format('H:i') : '-' }}</td>
+                    <td class="text-center">
+                        {{ $a->check_out_time ? \Carbon\Carbon::parse($a->check_out_time)->format('H:i') : '-' }}</td>
                     <td class="text-center">
                         <span class="{{ $a->status == 'terlambat' ? 'status-terlambat' : 'status-hadir' }}">
                             {{ strtoupper($a->status) }}
@@ -140,18 +150,12 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 20px;">Tidak ada data absensi untuk periode ini.</td>
+                    <td colspan="7" class="text-center" style="padding: 20px;">Tidak ada data absensi untuk periode
+                        ini.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
-
-    <div class="footer">
-        <p>Pontianak, {{ $tanggal_cetak }}</p>
-        <p>Petugas Administrasi,</p>
-        <div class="space-tanda-tangan"></div>
-        <p><strong>{{ auth()->user()->name ?? '( __________________________ )' }}</strong></p>
-        <p>BKK Kelas I Pontianak</p>
-    </div>
 </body>
+
 </html>

@@ -1,13 +1,15 @@
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #40BF89;">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="/">
-            <div class="d-flex align-items-center bg-white rounded-2 p-1 me-2" style="gap: 5px;">
-                <img src="{{ asset('logo/kemenkes.png') }}" alt="Kemenkes" height="30">
-                <img src="{{ asset('logo/bkk.png') }}" alt="BKK Pontianak" height="30">
-            </div>
-            <div class="ms-1 d-flex flex-column" style="line-height: 1.2;">
+            {{-- Logo tanpa background putih --}}
+            <img src="{{ asset('logo/kemenkes_bkk.png') }}" alt="BKK Pontianak"
+                 class="me-3"
+                 style="height: 50px; width: auto; filter: brightness(0) invert(1);">
+
+            {{-- Teks Brand --}}
+            <div class="d-flex flex-column justify-content-center" style="line-height: 1.1; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 12px;">
                 <span class="fw-bold fs-5 tracking-wider">SIKAWA</span>
-                <small style="font-size: 0.6rem; color: rgba(255,255,255,0.8);">BKK KELAS I PONTIANAK</small>
+                <small style="font-size: 0.65rem; color: rgba(255,255,255,0.9); font-weight: 500;">BKK KELAS I PONTIANAK</small>
             </div>
         </a>
 
@@ -23,6 +25,13 @@
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('riwayat*') ? 'active fw-bold' : '' }}" href="/riwayat">Riwayat Absen</a>
                 </li>
+
+                <li class="nav-item ms-lg-2">
+                    <button class="btn btn-link nav-link shadow-none" onclick="toggleTheme()" type="button" title="Ganti Mode Tampilan">
+                        <i id="theme-icon" class="bi bi-moon-stars-fill text-white"></i>
+                    </button>
+                </li>
+
                 <li class="nav-item ms-lg-3">
                     <a class="btn btn-dark btn-sm px-3 rounded-pill shadow-sm" href="/admin/dashboard">
                         <i class="bi bi-lock-fill me-1"></i> Admin Panel
@@ -37,11 +46,19 @@
     .tracking-wider {
         letter-spacing: 1px;
     }
-    .navbar-brand img {
-        object-fit: contain;
-    }
+
     /* Efek garis bawah pada menu aktif */
     .nav-link.active {
         border-bottom: 2px solid white;
+    }
+
+    .btn-link:focus, .btn-link:active {
+        box-shadow: none !important;
+        text-decoration: none;
+    }
+
+    /* Memastikan transisi warna saat ganti tema tetap halus */
+    .navbar {
+        transition: all 0.3s ease;
     }
 </style>

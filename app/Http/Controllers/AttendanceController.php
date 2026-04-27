@@ -85,7 +85,7 @@ class AttendanceController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Absen Pulang Berhasil! Hati-hati di jalan.',
+                    'message' => 'Absen Pulang Berhasil! Terima kasih.',
                 ]);
             }
         } catch (\Exception $e) {
@@ -174,33 +174,30 @@ class AttendanceController extends Controller
     public function riwayat(Request $request)
     {
         $nip = $request->query('nip');
-        $filter = $request->query('filter', 'today');
+        // Default rentang adalah 1 bulan terakhir jika tidak diisi
+        $start_date = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $end_date = $request->query('end_date', Carbon::now()->toDateString());
+
         $attendances = collect();
         $user = null;
 
         if ($nip) {
-            // Cari user berdasarkan NIP
             $user = User::where('nip', $nip)->first();
 
             if ($user) {
                 $query = Attendance::where('user_id', $user->id);
 
-                // Logika Filter
-                if ($filter == 'today') {
-                    $query->whereDate('created_at', Carbon::today());
-                } elseif ($filter == 'weekly') {
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                } elseif ($filter == 'monthly') {
-                    $query->whereMonth('created_at', Carbon::now()->month)
-                        ->whereYear('created_at', Carbon::now()->year);
-                }
+                // Logika Filter Rentang Tanggal
+                $query->whereBetween('created_at', [
+                    Carbon::parse($start_date)->startOfDay(),
+                    Carbon::parse($end_date)->endOfDay(),
+                ]);
 
                 $attendances = $query->orderBy('created_at', 'desc')->get();
             }
         }
 
-        // SESUAI SCREENSHOT: File ada di folder pegawai/riwayat.blade.php
-        return view('pegawai.riwayat', compact('attendances', 'nip', 'filter', 'user'));
+        return view('pegawai.riwayat', compact('attendances', 'nip', 'start_date', 'end_date', 'user'));
     }
 
     public function report(Request $request)
@@ -208,9 +205,11 @@ class AttendanceController extends Controller
         // Mengambil input filter dari URL
         $nip = $request->query('nip');
         $timKerjaId = $request->query('tim_kerja_id');
-        $periode = $request->query('periode', 'today');
 
-        // Query dengan Eager Loading agar tidak berat (N+1 Problem)
+        // Default rentang: awal bulan ini sampai hari ini
+        $start_date = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $end_date = $request->query('end_date', Carbon::now()->toDateString());
+
         $query = Attendance::with(['user.tim_kerja']);
 
         // Filter NIP atau Nama
@@ -228,64 +227,51 @@ class AttendanceController extends Controller
             });
         }
 
-        // Filter Periode Waktu
-        if ($periode == 'today') {
-            $query->whereDate('created_at', Carbon::today());
-        } elseif ($periode == 'weekly') {
-            $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        } elseif ($periode == 'monthly') {
-            $query->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year);
-        }
+        // Filter Rentang Tanggal
+        $query->whereBetween('created_at', [
+            Carbon::parse($start_date)->startOfDay(),
+            Carbon::parse($end_date)->endOfDay(),
+        ]);
 
         $attendances = $query->latest()->get();
 
-        // Data tambahan untuk dropdown dan informasi di View
         $timKerjas = TimKerja::all();
         $jamMasuk = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
 
         return view('admin.absensi.index', compact(
-            'attendances', 'timKerjas', 'jamMasuk', 'nip', 'timKerjaId', 'periode'
+            'attendances', 'timKerjas', 'jamMasuk', 'nip', 'timKerjaId', 'start_date', 'end_date'
         ));
     }
 
     public function exportPdf(Request $request)
     {
-        // AMBIL PARAMETER (Pastikan namanya 'filter' sesuai dengan di View)
         $nip = $request->query('nip');
-        $filter = $request->query('filter', 'today');
+        $start_date = $request->query('start_date');
+        $end_date = $request->query('end_date');
 
-        // 1. Cari Usernya dulu secara spesifik (agar tidak tertukar)
         $user = User::where('nip', $nip)->first();
 
         if (! $user) {
             return redirect()->back()->with('error', 'Pegawai tidak ditemukan.');
         }
 
-        // 2. Buat Query Absensi khusus untuk user tersebut
         $query = Attendance::where('user_id', $user->id);
 
-        // 3. Logika Filter Tanggal (Harus sama persis dengan fungsi riwayat)
-        if ($filter == 'today') {
-            $query->whereDate('created_at', Carbon::today());
-        } elseif ($filter == 'weekly') {
+        // Filter berdasarkan rentang tanggal yang sama dengan di riwayat
+        if ($start_date && $end_date) {
             $query->whereBetween('created_at', [
-                Carbon::now()->startOfWeek(),
-                Carbon::now()->endOfWeek(),
+                Carbon::parse($start_date)->startOfDay(),
+                Carbon::parse($end_date)->endOfDay(),
             ]);
-        } elseif ($filter == 'monthly') {
-            $query->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year);
         }
 
-        // 4. Ambil SEMUA data hasil filter (Gunakan get(), jangan first())
-        $attendances = $query->orderBy('created_at', 'desc')->get();
+        $attendances = $query->orderBy('created_at', 'asc')->get();
 
-        // 5. Kirim data ke View PDF
         $data = [
             'user' => $user,
             'attendances' => $attendances,
-            'filter' => $filter,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
             'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
         ];
 
@@ -298,15 +284,13 @@ class AttendanceController extends Controller
     // Tambahkan method ini di dalam class AttendanceController
     public function exportReportPdf(Request $request)
     {
-        // 1. Ambil data filter dari URL
         $nip = $request->query('nip');
         $timKerjaId = $request->query('tim_kerja_id');
-        $periode = $request->query('periode', 'today');
+        $start_date = $request->query('start_date');
+        $end_date = $request->query('end_date');
 
-        // 2. Query data dengan relasi user dan tim_kerja
         $query = Attendance::with(['user.tim_kerja']);
 
-        // Filter NIP atau Nama
         if ($nip) {
             $query->whereHas('user', function ($q) use ($nip) {
                 $q->where('nip', 'like', "%$nip%")
@@ -314,38 +298,32 @@ class AttendanceController extends Controller
             });
         }
 
-        // Filter Tim Kerja
         if ($timKerjaId) {
             $query->whereHas('user', function ($q) use ($timKerjaId) {
                 $q->where('tim_kerja_id', $timKerjaId);
             });
         }
 
-        // Filter Periode Waktu
-        if ($periode == 'today') {
-            $query->whereDate('created_at', Carbon::today());
-        } elseif ($periode == 'weekly') {
-            $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        } elseif ($periode == 'monthly') {
-            $query->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year);
+        // Filter Rentang Tanggal
+        if ($start_date && $end_date) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($start_date)->startOfDay(),
+                Carbon::parse($end_date)->endOfDay(),
+            ]);
         }
 
-        // Ambil data (urutkan dari yang terlama ke terbaru untuk laporan)
         $attendances = $query->orderBy('created_at', 'asc')->get();
 
-        // 3. Siapkan data untuk dikirim ke view PDF
         $data = [
             'attendances' => $attendances,
-            'periode' => $periode,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
             'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
             'tim_filter' => $timKerjaId ? TimKerja::find($timKerjaId)->nama : 'Semua Tim',
         ];
 
-        // 4. Generate PDF menggunakan view khusus admin
-        // Pastikan kamu sudah membuat file: resources/views/admin/absensi/report_pdf.blade.php
         $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
-            ->setPaper('a4', 'landscape'); // Landscape agar tabel luas
+            ->setPaper('a4', 'landscape');
 
         return $pdf->download('Laporan_Absensi_BKK_'.date('Ymd_His').'.pdf');
     }
