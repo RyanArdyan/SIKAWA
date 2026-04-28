@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TimKerjaController;
+use App\Http\Controllers\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,6 +66,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // CRUD Pegawai & Tim Kerja
     Route::resource('pegawai', PegawaiController::class);
     Route::resource('tim-kerja', TimKerjaController::class);
+
+    // TAMBAHKAN INI: CRUD Lokasi & IP Kantor
+    Route::resource('locations', LocationController::class);
 
     // Pengaturan Sistem
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');

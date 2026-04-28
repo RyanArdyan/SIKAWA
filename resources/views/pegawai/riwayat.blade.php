@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Presensi Pegawai - SIKAWA')
+
 @section('content')
     <div class="container py-4">
         {{-- Card Filter --}}

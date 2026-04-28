@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Location;
 use App\Models\Setting;
 use App\Models\TimKerja;
 use App\Models\User;
@@ -29,30 +30,54 @@ class AttendanceController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Tambahkan validasi latitude & longitude agar data tidak kosong
-        $request->validate([
-            'nip' => 'required',
-            'image' => 'required',
-            'latitude' => 'required',
-            'longitude' => 'required',
-        ]);
+        // 1. Identifikasi IP dan Tipe Absen
+        $userIp = $request->ip();
 
-        $user = User::where('nip', $request->nip)->first();
-        if (! $user) {
-            return response()->json(['success' => false, 'message' => 'User tidak ditemukan']);
+        // Cek di tabel locations (Pastikan Model Location sudah di-import di atas)
+        $isWfo = Location::where('ip_address', $userIp)
+            ->where('is_active', true)
+            ->exists();
+
+        $tipeAbsen = $isWfo ? 'WFO' : 'WFA';
+
+        // 2. Validasi Dinamis
+        // Jika WFA: Foto, Lat, dan Long wajib ada. Jika WFO: Boleh kosong.
+        $rules = [
+            'nip' => 'required',
+        ];
+
+        if ($tipeAbsen === 'WFA') {
+            $rules['image'] = 'required';
+            $rules['latitude'] = 'required';
+            $rules['longitude'] = 'required';
         }
 
+        $request->validate($rules);
+
+        // 3. Cari User berdasarkan NIP
+        $user = User::where('nip', $request->nip)->first();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Pegawai tidak ditemukan.']);
+        }
+
+        // 4. Cek data absensi hari ini
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('created_at', Carbon::today())
             ->first();
 
         try {
-            // Proses Image Base64
-            $image = $request->image;
-            $image = str_replace(['data:image/jpeg;base64,', ' '], ['', '+'], $image);
-            $suffix = $attendance ? 'OUT' : 'IN';
-            $imageName = $user->nip.'_'.$suffix.'_'.time().'.jpeg';
-            Storage::disk('public')->put('attendances/'.$imageName, base64_decode($image));
+            $imagePath = null;
+
+            // 5. Proses Simpan Gambar (Jika ada input image)
+            if ($request->has('image') && ! empty($request->image)) {
+                $image = $request->image;
+                $image = str_replace(['data:image/jpeg;base64,', ' '], ['', '+'], $image);
+                $suffix = $attendance ? 'OUT' : 'IN';
+                $imageName = $user->nip.'_'.$suffix.'_'.time().'.jpeg';
+
+                Storage::disk('public')->put('attendances/'.$imageName, base64_decode($image));
+                $imagePath = 'attendances/'.$imageName;
+            }
 
             if (! $attendance) {
                 // --- LOGIKA ABSEN MASUK ---
@@ -61,62 +86,71 @@ class AttendanceController extends Controller
 
                 Attendance::create([
                     'user_id' => $user->id,
-                    'photo_path' => 'attendances/'.$imageName,
+                    'photo_path' => $imagePath,
                     'check_in_time' => now(),
-                    'latitude_in' => $request->latitude,   // Simpan Latitude Masuk
-                    'longitude_in' => $request->longitude, // Simpan Longitude Masuk
+                    'latitude_in' => $request->latitude,
+                    'longitude_in' => $request->longitude,
                     'status' => $statusAbsen,
+                    'tipe_absen' => $tipeAbsen,
+                    'ip_address_log' => $userIp,
                 ]);
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Absen Masuk Berhasil! Status: '.ucfirst($statusAbsen),
+                    'message' => "Absen Masuk ($tipeAbsen) Berhasil! Status: ".ucfirst($statusAbsen),
                 ]);
 
             } else {
                 // --- LOGIKA ABSEN PULANG ---
-                // Kita update baris yang sama dengan data kepulangan
+                // Pastikan kolom photo_path_out sudah ada di database Anda
                 $attendance->update([
                     'check_out_time' => now(),
-                    'photo_path_out' => 'attendances/'.$imageName,
-                    'latitude_out' => $request->latitude,   // Simpan Latitude Pulang
-                    'longitude_out' => $request->longitude, // Simpan Longitude Pulang
+                    'photo_path_out' => $imagePath,
+                    'latitude_out' => $request->latitude,
+                    'longitude_out' => $request->longitude,
+                    'ip_address_log' => $userIp,
                 ]);
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Absen Pulang Berhasil! Terima kasih.',
+                    'message' => "Absen Pulang ($tipeAbsen) Berhasil! Hati-hati di jalan.",
                 ]);
             }
+
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Gagal: '.$e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Sistem Error: '.$e->getMessage()]);
         }
     }
 
-    public function getPegawai($nip)
+    public function getPegawai($nip, Request $request)
     {
         $user = User::where('nip', $nip)->first();
         if (! $user) {
             return response()->json(['success' => false]);
         }
 
+        // --- PERUBAHAN LOGIKA IP MENGGUNAKAN TABEL LOCATIONS ---
+        $userIp = $request->ip();
+
+        // Cek apakah IP user ada di daftar IP publik kantor yang aktif
+        $isWfo = Location::where('ip_address', $userIp)
+            ->where('is_active', true)
+            ->exists();
+        // -------------------------------------------------------
+
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('created_at', now()->toDateString())
             ->first();
 
         $status = 'masuk';
-        $laporanSudahAda = false; // Variabel baru untuk mengecek status PDF
+        $laporanSudahAda = false;
 
         if ($attendance) {
             if ($attendance->check_out_time) {
                 $status = 'selesai';
             } else {
                 $status = 'pulang';
-                // CEK APAKAH FILE PDF SUDAH ADA DI DATABASE
-                // Sesuaikan nama kolom 'laporan_pdf' dengan kolom di database kamu
-                if (! empty($attendance->laporan_pdf)) {
-                    $laporanSudahAda = true;
-                }
+                $laporanSudahAda = ! empty($attendance->laporan_pdf);
             }
         }
 
@@ -124,7 +158,8 @@ class AttendanceController extends Controller
             'success' => true,
             'nama' => $user->name,
             'status' => $status,
-            'laporan_ready' => $laporanSudahAda, // Kirim status ini ke frontend
+            'laporan_ready' => $laporanSudahAda,
+            'is_wfo' => $isWfo,
         ]);
     }
 

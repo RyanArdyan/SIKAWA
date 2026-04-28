@@ -17,7 +17,7 @@ return new class extends Migration
 
             // Kolom untuk Masuk
             $table->string('photo_path'); // Foto saat masuk
-            $table->timestamp('check_in_time');
+            $table->timestamp('check_in_time')->nullable();
 
             // Kolom untuk Pulang (Kita buat nullable karena saat masuk, data ini masih kosong)
             $table->timestamp('check_out_time')->nullable();

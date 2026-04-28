@@ -7,8 +7,11 @@
         <div class="col-md-6">
             <div class="card shadow border-0 overflow-hidden">
                 <div class="card-header text-white text-center py-3" style="background-color: #40BF89;">
-                    <h4 class="mb-0 fw-bold">ABSENSI KAMERA</h4>
-                    <small>Silakan masukkan NIP untuk memulai</small>
+                    {{-- Indikator Mode Otomatis --}}
+                    <div id="status-koneksi" class="badge rounded-pill mb-2 px-3"
+                        style="background: rgba(0,0,0,0.2); display: none;"></div>
+                    <h4 class="mb-0 fw-bold" id="title-absen">ABSENSI KAMERA</h4>
+                    <small id="subtitle-absen">Silakan masukkan NIP untuk memulai</small>
                 </div>
 
                 <div class="card-body p-4 text-center">
@@ -19,11 +22,19 @@
                         <div id="nama-pegawai" class="mt-2 fw-bold" style="min-height: 24px;"></div>
                     </div>
 
-                    <div class="mb-4 position-relative bg-dark rounded shadow-inner" style="min-height: 250px;">
+                    {{-- AREA DYNAMIS: KAMERA ATAU WFO PLACEHOLDER --}}
+                    <div id="container-kamera" class="mb-4 position-relative bg-dark rounded shadow-inner"
+                        style="min-height: 250px;">
                         <video id="kamera" autoplay playsinline class="w-100 rounded"
                             style="object-fit: cover; max-height: 350px;"></video>
                         <div class="position-absolute top-50 start-50 translate-middle border border-2 border-white opacity-25"
                             style="width: 80%; height: 80%; pointer-events: none;"></div>
+                    </div>
+
+                    <div id="wfo-placeholder" class="d-none mb-4 py-5 bg-light rounded border text-center">
+                        <i class="bi bi-building-check text-success" style="font-size: 4rem;"></i>
+                        <p class="mt-2 fw-bold text-success">Terdeteksi di Kantor Pusat</p>
+                        <small class="text-muted">Kamera dinonaktifkan karena Anda menggunakan WiFi Kantor.</small>
                     </div>
 
                     <button id="btn-capture" class="btn btn-lg w-100 py-3 shadow-sm text-white"
@@ -39,8 +50,10 @@
                                 </h6>
                                 <p class="small text-muted">Satu langkah lagi! Silakan upload laporan kegiatan (PDF).</p>
                                 <div class="input-group">
-                                    <input type="file" id="file-laporan" class="form-control form-control-sm" accept=".pdf">
-                                    <button class="btn btn-sm text-white" style="background-color: #40BF89;" type="button" id="btn-upload-pdf">Kirim</button>
+                                    <input type="file" id="file-laporan" class="form-control form-control-sm"
+                                        accept=".pdf">
+                                    <button class="btn btn-sm text-white" style="background-color: #40BF89;" type="button"
+                                        id="btn-upload-pdf">Kirim</button>
                                 </div>
                                 <div id="upload-status" class="small mt-2"></div>
                             </div>
@@ -67,7 +80,13 @@
         const canvas = document.getElementById('canvas');
         const containerUpload = document.getElementById('container-upload');
 
-        // 1. CARI NAMA & CEK STATUS
+        const statusKoneksi = document.getElementById('status-koneksi');
+        const containerKamera = document.getElementById('container-kamera');
+        const wfoPlaceholder = document.getElementById('wfo-placeholder');
+        const titleAbsen = document.getElementById('title-absen');
+
+        let currentMode = 'WFA';
+
         nipInput.addEventListener('input', function() {
             const nip = this.value;
             if (nip.length >= 4) {
@@ -78,37 +97,93 @@
                             namaDisplay.innerText = "Nama: " + data.nama;
                             namaDisplay.style.color = "#40BF89";
 
+                            currentMode = data.is_wfo ? 'WFO' : 'WFA';
+                            if (data.is_wfo) {
+                                statusKoneksi.innerHTML = '<i class="bi bi-wifi"></i> WiFi Kantor';
+                                statusKoneksi.style.display = 'inline-block';
+                                containerKamera.classList.add('d-none');
+                                wfoPlaceholder.classList.remove('d-none');
+                                titleAbsen.innerText = "ABSENSI WFO";
+                            } else {
+                                statusKoneksi.innerHTML = '<i class="bi bi-globe"></i> Jaringan Luar';
+                                statusKoneksi.style.display = 'inline-block';
+                                containerKamera.classList.remove('d-none');
+                                wfoPlaceholder.classList.add('d-none');
+                                titleAbsen.innerText = "ABSENSI KAMERA";
+                            }
+
                             if (data.status === 'masuk') {
-                                btnCapture.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i> Absen Masuk';
+                                btnCapture.innerHTML = data.is_wfo ?
+                                    '<i class="bi bi-check-lg"></i> Absen Masuk (WFO)' :
+                                    '<i class="bi bi-camera-fill"></i> Ambil Foto & Masuk';
                                 btnCapture.style.backgroundColor = "#40BF89";
                                 btnCapture.disabled = false;
-                                containerUpload.classList.add('d-none');
                             } else if (data.status === 'pulang') {
-                                // Cek apakah sudah upload laporan sebelumnya (fitur baru dari Controller)
                                 if (data.laporan_ready) {
-                                    btnCapture.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i> Absen Pulang Sekarang';
-                                    btnCapture.style.backgroundColor = "#ffc107"; // Kuning untuk pulang
-                                    btnCapture.style.color = "#000";
+                                    btnCapture.innerHTML = '<i class="bi bi-box-arrow-right"></i> Absen Pulang Sekarang';
+                                    btnCapture.style.backgroundColor = "#ffc107";
                                     btnCapture.disabled = false;
-                                    containerUpload.classList.add('d-none');
                                 } else {
-                                    btnCapture.innerHTML = '<i class="bi bi-lock-fill me-2"></i> Upload Laporan Dulu';
-                                    btnCapture.style.backgroundColor = "#6c757d"; // Abu-abu saat terkunci
+                                    btnCapture.innerHTML = '<i class="bi bi-lock-fill"></i> Laporan Belum Ada';
+                                    btnCapture.style.backgroundColor = "#6c757d";
                                     btnCapture.disabled = true;
                                     containerUpload.classList.remove('d-none');
                                 }
-                            } else if (data.status === 'selesai') {
-                                btnCapture.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Absensi Selesai';
-                                btnCapture.style.backgroundColor = "#6c757d";
-                                btnCapture.disabled = true;
-                                containerUpload.classList.add('d-none');
                             }
                         }
                     });
             }
         });
 
-        // 2. PROSES UNGGAH PDF
+        btnCapture.addEventListener('click', () => {
+            const originalText = btnCapture.innerHTML;
+            btnCapture.innerText = "Memproses...";
+            btnCapture.disabled = true;
+
+            const sendAbsen = (lat = null, lng = null, img = null) => {
+                fetch('{{ route('absen.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        image: img,
+                        nip: nipInput.value,
+                        latitude: lat,
+                        longitude: lng
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert("Gagal: " + data.message);
+                        btnCapture.innerHTML = originalText;
+                        btnCapture.disabled = false;
+                    }
+                });
+            };
+
+            if (currentMode === 'WFO') {
+                sendAbsen();
+            } else {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    const dataURI = canvas.toDataURL('image/jpeg', 0.7);
+                    sendAbsen(position.coords.latitude, position.coords.longitude, dataURI);
+                }, (error) => {
+                    alert("GPS Wajib aktif untuk mode WFA!");
+                    btnCapture.innerHTML = originalText;
+                    btnCapture.disabled = false;
+                });
+            }
+        });
+
         document.getElementById('btn-upload-pdf').addEventListener('click', function() {
             const fileInput = document.getElementById('file-laporan');
             const statusDiv = document.getElementById('upload-status');
@@ -123,7 +198,7 @@
             btnUpload.disabled = true;
             statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm" style="color: #40BF89;"></div> Mengunggah...';
 
-            fetch('{{ route("absen.uploadLaporan") }}', {
+            fetch('{{ route('absen.uploadLaporan') }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -138,7 +213,6 @@
                     btnCapture.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i> Absen Pulang Sekarang';
                     btnCapture.style.backgroundColor = "#ffc107";
                     btnCapture.style.color = "#000";
-
                     statusDiv.innerHTML = '<span class="fw-bold" style="color: #40BF89;"><i class="bi bi-check-circle"></i> Laporan Terunggah.</span>';
                     btnUpload.style.backgroundColor = "#198754";
                     btnUpload.innerHTML = '<i class="bi bi-check-lg"></i>';
@@ -151,50 +225,14 @@
             });
         });
 
-        // 3. PROSES SIMPAN ABSEN
-        btnCapture.addEventListener('click', () => {
-            const originalText = btnCapture.innerHTML;
-            btnCapture.innerText = "Memproses...";
-            btnCapture.disabled = true;
-
-            navigator.geolocation.getCurrentPosition((position) => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const dataURI = canvas.toDataURL('image/jpeg', 0.7);
-
-                fetch('{{ route("absen.store") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        image: dataURI,
-                        nip: nipInput.value,
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        window.location.reload();
-                    } else {
-                        alert("Gagal: " + data.message);
-                        btnCapture.innerHTML = originalText;
-                        btnCapture.disabled = false;
-                    }
-                });
-            }, (error) => {
-                alert("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
-                btnCapture.innerHTML = originalText;
-                btnCapture.disabled = false;
-            });
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }
+        })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error("Gagal akses kamera: ", err);
         });
-
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => { video.srcObject = stream; });
     </script>
 @endpush

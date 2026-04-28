@@ -173,6 +173,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
+                                href="/admin/locations">
+                                <i class="bi bi-geo-alt me-2"></i> Setel IP
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}"
                                 href="{{ route('admin.settings') }}">
                                 <i class="bi bi-gear me-2"></i> Pengaturan

@@ -43,6 +43,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function isAdmin(): bool
+    {
+        // Asumsi: Anda punya kolom 'role' di tabel users
+        return $this->role === 'admin';
+    }
 }
 
 
