@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\Location;
 use App\Models\Setting;
 use App\Models\TimKerja;
 use App\Models\User;
@@ -21,46 +20,30 @@ class AttendanceController extends Controller
 
     public function showDetail($id)
     {
-        // Mengambil data absen beserta data user-nya
         $attendance = Attendance::with('user')->findOrFail($id);
 
-        // Mengarahkan ke file view detail yang kita buat sebelumnya
         return view('admin.absensi.show', compact('attendance'));
     }
 
     public function store(Request $request)
     {
-        // 1. Identifikasi IP dan Tipe Absen
+        // 1. IP dicatat hanya untuk log, tidak menentukan mode lagi
         $userIp = $request->ip();
+        $tipeAbsen = 'WFA'; // Dipaksa selalu WFA (Kamera & GPS Wajib)
 
-        // Cek di tabel locations (Pastikan Model Location sudah di-import di atas)
-        $isWfo = Location::where('ip_address', $userIp)
-            ->where('is_active', true)
-            ->exists();
-
-        $tipeAbsen = $isWfo ? 'WFO' : 'WFA';
-
-        // 2. Validasi Dinamis
-        // Jika WFA: Foto, Lat, dan Long wajib ada. Jika WFO: Boleh kosong.
-        $rules = [
+        // 2. Validasi (Selalu mewajibkan image dan koordinat)
+        $request->validate([
             'nip' => 'required',
-        ];
+            'image' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
+        ]);
 
-        if ($tipeAbsen === 'WFA') {
-            $rules['image'] = 'required';
-            $rules['latitude'] = 'required';
-            $rules['longitude'] = 'required';
-        }
-
-        $request->validate($rules);
-
-        // 3. Cari User berdasarkan NIP
         $user = User::where('nip', $request->nip)->first();
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'Pegawai tidak ditemukan.']);
         }
 
-        // 4. Cek data absensi hari ini
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('created_at', Carbon::today())
             ->first();
@@ -68,7 +51,6 @@ class AttendanceController extends Controller
         try {
             $imagePath = null;
 
-            // 5. Proses Simpan Gambar (Jika ada input image)
             if ($request->has('image') && ! empty($request->image)) {
                 $image = $request->image;
                 $image = str_replace(['data:image/jpeg;base64,', ' '], ['', '+'], $image);
@@ -80,7 +62,7 @@ class AttendanceController extends Controller
             }
 
             if (! $attendance) {
-                // --- LOGIKA ABSEN MASUK ---
+                // LOGIKA ABSEN MASUK
                 $jamMasukSetting = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
                 $statusAbsen = now()->format('H:i') > $jamMasukSetting ? 'terlambat' : 'hadir';
 
@@ -97,12 +79,11 @@ class AttendanceController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => "Absen Masuk ($tipeAbsen) Berhasil! Status: ".ucfirst($statusAbsen),
+                    'message' => 'Absen Masuk Berhasil! Status: '.ucfirst($statusAbsen),
                 ]);
 
             } else {
-                // --- LOGIKA ABSEN PULANG ---
-                // Pastikan kolom photo_path_out sudah ada di database Anda
+                // LOGIKA ABSEN PULANG
                 $attendance->update([
                     'check_out_time' => now(),
                     'photo_path_out' => $imagePath,
@@ -113,7 +94,7 @@ class AttendanceController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => "Absen Pulang ($tipeAbsen) Berhasil! Hati-hati di jalan.",
+                    'message' => 'Absen Pulang Berhasil! Hati-hati di jalan.',
                 ]);
             }
 
@@ -126,17 +107,8 @@ class AttendanceController extends Controller
     {
         $user = User::where('nip', $nip)->first();
         if (! $user) {
-            return response()->json(['success' => false]);
+            return response()->json(['success' => false, 'message' => 'Pegawai tidak ditemukan']);
         }
-
-        // --- PERUBAHAN LOGIKA IP MENGGUNAKAN TABEL LOCATIONS ---
-        $userIp = $request->ip();
-
-        // Cek apakah IP user ada di daftar IP publik kantor yang aktif
-        $isWfo = Location::where('ip_address', $userIp)
-            ->where('is_active', true)
-            ->exists();
-        // -------------------------------------------------------
 
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('created_at', now()->toDateString())
@@ -150,6 +122,7 @@ class AttendanceController extends Controller
                 $status = 'selesai';
             } else {
                 $status = 'pulang';
+                // Karena murni WFA, cek kolom laporan_pdf secara eksplisit
                 $laporanSudahAda = ! empty($attendance->laporan_pdf);
             }
         }
@@ -159,9 +132,12 @@ class AttendanceController extends Controller
             'nama' => $user->name,
             'status' => $status,
             'laporan_ready' => $laporanSudahAda,
-            'is_wfo' => $isWfo,
+            'is_wfo' => false, // Selalu false karena fitur WFO dimatikan
         ]);
     }
+
+    // Fungsi lain (uploadLaporan, riwayat, report, export) tetap sama...
+    // [Silakan simpan fungsi sisanya dari kode lama Anda di bawah sini]
 
     public function uploadLaporan(Request $request)
     {

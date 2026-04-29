@@ -8,10 +8,12 @@ use Illuminate\Http\Request;
 
 class PegawaiController extends Controller
 {
-    // Menampilkan daftar semua pegawai
     public function index()
     {
-        $pegawai = User::orderBy('name', 'asc')->get();
+        // Filter hanya yang rolenya 'pegawai'
+        $pegawai = User::where('role', 'pegawai')
+            ->orderBy('name', 'asc')
+            ->get();
 
         return view('admin.pegawai.index', compact('pegawai'));
     }

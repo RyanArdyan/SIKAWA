@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Gunakan method alias untuk mendaftarkan middleware 'admin'
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
+            'superadmin' => \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

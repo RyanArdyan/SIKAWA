@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('nip')->unique();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('role')->default('pegawai');
+            $table->enum('role', ['super_admin', 'admin', 'pegawai'])->default('pegawai');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{{-- Tambahkan id="main-html" dan data-bs-theme default --}}
 <html lang="id" id="main-html" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">

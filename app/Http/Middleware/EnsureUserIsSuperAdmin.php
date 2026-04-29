@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsAdmin
+class EnsureUserIsSuperAdmin
 {
     /**
      * Handle an incoming request.
@@ -15,11 +15,11 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Menggunakan fungsi isAdmin() dari model User yang sudah mencakup admin & super_admin
-        if (auth()->check() && auth()->user()->isAdmin()) {
+        // Eksklusif hanya untuk super_admin
+        if (auth()->check() && auth()->user()->isSuperAdmin()) {
             return $next($request);
         }
 
-        return redirect('/')->with('error', 'Akses ditolak! Anda bukan Admin.');
+        return redirect()->route('admin.dashboard')->with('error', 'Hanya Super Admin yang boleh mengakses halaman ini.');
     }
 }

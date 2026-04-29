@@ -166,6 +166,17 @@
                                 <i class="bi bi-people me-2"></i> Data Pegawai
                             </a>
                         </li>
+
+                        {{-- MENU KHUSUS SUPER ADMIN --}}
+                        @if (auth()->user()->isSuperAdmin())
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/manage-admins*') ? 'active' : '' }}"
+                                    href="/admin/manage-admins">
+                                    <i class="bi bi-shield-lock me-2"></i> Kelola Admin
+                                </a>
+                            </li>
+                        @endif
+
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('admin/laporan*') ? 'active' : '' }}"
                                 href="/admin/laporan">
@@ -186,9 +197,22 @@
                         </li>
 
                         <li class="nav-item">
-                            {{-- Gunakan class custom untuk kontras yang lebih baik --}}
-                            <a class="nav-link text-danger-custom" href="{{ route('absen.home') }}">
-                                <i class="bi bi-box-arrow-left me-2"></i> Keluar ke Absen
+                            {{-- Tombol Logout Sebenarnya --}}
+                            <a class="nav-link text-danger-custom" href="#"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="bi bi-power me-2"></i> Logout (Keluar)
+                            </a>
+
+                            {{-- Form Tersembunyi untuk Logout --}}
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                @csrf
+                            </form>
+                        </li>
+
+                        <li class="nav-item mt-2">
+                            {{-- Link Lihat Frontend (Tanpa Logout) --}}
+                            <a class="nav-link opacity-75 small" href="{{ route('absen.home') }}" target="_blank">
+                                <i class="bi bi-eye me-2"></i> Lihat Halaman Absen
                             </a>
                         </li>
                     </ul>
