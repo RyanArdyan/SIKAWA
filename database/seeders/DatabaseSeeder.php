@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
                 'tim_kerja_id' => $tim->id,
                 'name' => 'Admin BKK',
                 'password' => bcrypt('password123'),
-                'role' => 'admin',
+                'role' => 'super_admin',
                 'nip' => '123456',
             ]
         );
