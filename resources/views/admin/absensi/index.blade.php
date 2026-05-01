@@ -57,7 +57,7 @@
                         value="{{ $end_date }}">
                 </div>
 
-                {{-- Tombol Aksi --}}
+                {{-- Ganti bagian tombol aksi Anda menjadi seperti ini --}}
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn text-white w-100 shadow-sm fw-bold"
                         style="background-color: #40BF89; border: none;">
@@ -65,8 +65,7 @@
                     </button>
 
                     @if ($attendances->count() > 0)
-                        <a href="{{ route('admin.absensi.exportPdf', request()->all()) }}"
-                            class="btn btn-danger w-100 shadow-sm fw-bold">
+                        <a href="#" id="btn-export-pdf" class="btn btn-danger w-100 shadow-sm fw-bold">
                             <i class="bi bi-file-pdf"></i> PDF
                         </a>
                     @endif
@@ -182,3 +181,31 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('btn-export-pdf').addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // Ambil nilai dari input secara langsung
+        const startDate = document.querySelector('input[name="start_date"]').value;
+        const endDate = document.querySelector('input[name="end_date"]').value;
+        const nip = document.querySelector('input[name="nip"]').value;
+        const timKerja = document.querySelector('select[name="tim_kerja_id"]').value;
+        const tipeAbsen = document.querySelector('select[name="tipe_absen"]').value;
+
+        // Susun URL secara dinamis
+        let url = "{{ route('admin.absensi.exportPdf') }}";
+        let params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate,
+            nip: nip,
+            tim_kerja_id: timKerja,
+            tipe_absen: tipeAbsen
+        });
+
+        // Eksekusi download
+        window.location.href = url + '?' + params.toString();
+    });
+</script>
+@endpush
