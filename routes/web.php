@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\TimKerjaController;
+use App\Http\Controllers\WfoAttendanceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,6 +36,13 @@ Route::get('/riwayat', [AttendanceController::class, 'riwayat'])->name('absen.ri
 Route::get('/riwayat/export', [AttendanceController::class, 'exportPdf'])->name('absen.exportPdf');
 Route::post('/absen/store', [AttendanceController::class, 'store'])->name('absen.store');
 Route::post('/absen/upload-laporan', [AttendanceController::class, 'uploadLaporan'])->name('absen.uploadLaporan');
+
+// Grouping agar rapi
+Route::prefix('wfo')->group(function () {
+    Route::get('/', [WfoAttendanceController::class, 'index'])->name('absen.wfo');
+    Route::get('/get-pegawai/{nip}', [WfoAttendanceController::class, 'getPegawai']);
+    Route::post('/store', [WfoAttendanceController::class, 'store'])->name('absen.storeWfo');
+});
 
 /*
 |--------------------------------------------------------------------------

@@ -23,7 +23,7 @@
                     <a class="nav-link {{ Request::is('/') ? 'active fw-bold' : '' }}" href="/">Presensi WFA</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('absen-kantor*') ? 'active fw-bold' : '' }}" href="/absen-kantor">Presensi Kantor (WFO)</a>
+                    <a class="nav-link {{ Request::is('wfo*') ? 'active fw-bold' : '' }}" href="/wfo">Presensi Kantor (WFO)</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('riwayat*') ? 'active fw-bold' : '' }}" href="/riwayat">Riwayat Absen</a>

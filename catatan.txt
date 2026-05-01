@@ -16,5 +16,5 @@ Pegawai bisa melihat rekap absen nya dan bisa di filter berdasarkan minggu dan b
 Admin bisa melihat rekap absen pegawai berdasarkan nip, tim kerja, hari ini,  minggu ini, dan bulan ini.
 
 
-baru:
-batasnya jam 08:00 maka pulangnya jam 16:30. 
+Yang harus diselesaikan :
+

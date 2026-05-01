@@ -42,7 +42,8 @@
                                 </h6>
                                 <p class="small text-muted">Silakan upload laporan kegiatan hari ini (PDF).</p>
                                 <div class="input-group">
-                                    <input type="file" id="file-laporan" class="form-control form-control-sm" accept=".pdf">
+                                    <input type="file" id="file-laporan" class="form-control form-control-sm"
+                                        accept=".pdf">
                                     <button class="btn btn-sm text-white" style="background-color: #40BF89;" type="button"
                                         id="btn-upload-pdf">Kirim</button>
                                 </div>
@@ -70,28 +71,44 @@
         const btnCapture = document.getElementById('btn-capture');
         const canvas = document.getElementById('canvas');
         const containerUpload = document.getElementById('container-upload');
+        const uploadStatus = document.getElementById('upload-status');
 
         let streamActive = null;
 
+        // 1. Fungsi Akses Kamera
         function startKamera() {
             if (streamActive) return;
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "user",
+                        width: {
+                            ideal: 1280
+                        },
+                        height: {
+                            ideal: 720
+                        }
+                    }
+                })
                 .then(stream => {
                     streamActive = stream;
                     video.srcObject = stream;
                 })
                 .catch(err => {
                     console.error("Gagal akses kamera: ", err);
-                    alert("Aplikasi butuh akses kamera untuk berfungsi.");
+                    alert("Aplikasi butuh izin kamera untuk verifikasi wajah.");
                 });
         }
 
-        // Jalankan kamera langsung
+        // Jalankan kamera saat halaman dimuat
         startKamera();
 
+        // 2. Handler Input NIP & Verifikasi Status Pegawai
         nipInput.addEventListener('input', function() {
             const nip = this.value;
             if (nip.length >= 4) {
+                namaDisplay.innerText = "Mencari data...";
+                namaDisplay.style.color = "#6c757d";
+
                 fetch(`/get-pegawai/${nip}`)
                     .then(res => res.json())
                     .then(data => {
@@ -99,63 +116,164 @@
                             namaDisplay.innerText = "Nama: " + data.nama;
                             namaDisplay.style.color = "#40BF89";
 
-                            // LOGIKA TOMBOL BERDASARKAN STATUS
+                            // --- LOGIKA TOMBOL DINAMIS SIKAWA ---
                             if (data.status === 'masuk') {
-                                btnCapture.innerHTML = '<i class="bi bi-camera-fill me-2"></i> Ambil Foto & Absen Masuk';
+                                btnCapture.innerHTML =
+                                    '<i class="bi bi-camera-fill me-2"></i> Ambil Foto & Absen Masuk';
+                                btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm text-white";
                                 btnCapture.style.backgroundColor = "#40BF89";
                                 btnCapture.disabled = false;
                                 containerUpload.classList.add('d-none');
+                                uploadStatus.innerHTML = "";
+
                             } else if (data.status === 'pulang') {
-                                if (data.laporan_ready) {
-                                    btnCapture.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i> Ambil Foto & Absen Pulang';
-                                    btnCapture.style.backgroundColor = "#ffc107";
-                                    btnCapture.style.color = "#000";
+                                // KONDISI 1: Sudah Upload Laporan DAN Sudah 8 Jam
+                                if (data.laporan_ready && data.boleh_pulang) {
+                                    btnCapture.innerHTML =
+                                        '<i class="bi bi-box-arrow-right me-2"></i> Ambil Foto & Absen Pulang';
+                                    btnCapture.className =
+                                        "btn btn-lg w-100 py-3 shadow-sm btn-warning fw-bold text-dark";
                                     btnCapture.disabled = false;
                                     containerUpload.classList.add('d-none');
-                                } else {
-                                    btnCapture.innerHTML = '<i class="bi bi-lock-fill me-2"></i> Upload Laporan Dahulu';
-                                    btnCapture.style.backgroundColor = "#6c757d";
+                                    uploadStatus.innerHTML = "";
+
+                                }
+                                // KONDISI 2: Laporan Belum Diupload
+                                else if (!data.laporan_ready) {
+                                    btnCapture.innerHTML =
+                                        '<i class="bi bi-lock-fill me-2"></i> Upload Laporan Dahulu';
+                                    btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-secondary";
                                     btnCapture.disabled = true;
                                     containerUpload.classList.remove('d-none');
+
+                                    // Info jika belum 1 jam untuk upload
+                                    uploadStatus.innerHTML = data.boleh_upload ? "" :
+                                        `<span class="text-danger small fw-bold">${data.pesan_waktu}</span>`;
+
                                 }
+                                // KONDISI 3: Laporan Sudah Ada, Tapi Belum 8 Jam (Kunci Tombol & Tampilkan Jam)
+                                else if (!data.boleh_pulang) {
+                                    // Mengambil jam saja dari string "Absen pulang baru tersedia pukul 16:00"
+                                    const jamTersedia = data.pesan_pulang.split('pukul ')[1];
+
+                                    btnCapture.innerHTML =
+                                        `<i class="bi bi-clock-history me-2"></i> BISA PULANG JAM ${jamTersedia}`;
+                                    btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-danger fw-bold";
+                                    btnCapture.disabled = true;
+                                    containerUpload.classList.add('d-none');
+
+                                    uploadStatus.innerHTML = `
+                                    <div class="alert alert-info py-2 mt-3 small shadow-sm animate__animated animate__fadeIn">
+                                        <i class="bi bi-info-circle-fill"></i>
+                                        Sesuai aturan WFA, Anda baru dapat absen pulang setelah 8 jam kerja.
+                                    </div>`;
+                                }
+
                             } else {
-                                btnCapture.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Sudah Absen Hari Ini';
+                                // Status 'selesai'
+                                btnCapture.innerHTML =
+                                    '<i class="bi bi-check-circle-fill me-2"></i> Sudah Absen Hari Ini';
+                                btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-secondary";
                                 btnCapture.disabled = true;
-                                btnCapture.style.backgroundColor = "#6c757d";
+                                containerUpload.classList.add('d-none');
+                                uploadStatus.innerHTML = "";
                             }
+
                         } else {
                             namaDisplay.innerText = data.message;
                             namaDisplay.style.color = "red";
                             btnCapture.disabled = true;
+                            containerUpload.classList.add('d-none');
+                            uploadStatus.innerHTML = "";
                         }
+                    })
+                    .catch(err => {
+                        console.error("Fetch error:", err);
+                        namaDisplay.innerText = "Gagal terhubung ke server.";
                     });
             }
         });
 
+        // 3. Handler Tombol Absen (Kamera + GPS)
         btnCapture.addEventListener('click', () => {
-            const originalText = btnCapture.innerHTML;
-            btnCapture.innerText = "Memproses...";
+            const originalContent = btnCapture.innerHTML;
+            btnCapture.innerText = "Mengunci Lokasi & Mengambil Foto...";
             btnCapture.disabled = true;
 
-            // Wajib GPS & Foto
+            const gpsOptions = {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0
+            };
+
             navigator.geolocation.getCurrentPosition((position) => {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
-                const dataURI = canvas.toDataURL('image/jpeg', 0.7);
+                const dataURI = canvas.toDataURL('image/jpeg', 0.8);
 
                 fetch('{{ route('absen.store') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            image: dataURI,
+                            nip: nipInput.value,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.reload();
+                        } else {
+                            alert("Gagal: " + data.message);
+                            btnCapture.innerHTML = originalContent;
+                            btnCapture.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        alert("Terjadi kesalahan koneksi ke server.");
+                        btnCapture.innerHTML = originalContent;
+                        btnCapture.disabled = false;
+                    });
+
+            }, (error) => {
+                let msg = "Izin lokasi (GPS) wajib aktif!";
+                if (error.code === 3) msg =
+                    "Gagal mendapatkan lokasi (Timeout). Pastikan GPS Anda aktif dan akurat.";
+                alert(msg);
+                btnCapture.innerHTML = originalContent;
+                btnCapture.disabled = false;
+            }, gpsOptions);
+        });
+
+        // 4. Handler Upload Laporan PDF
+        document.getElementById('btn-upload-pdf').addEventListener('click', function() {
+            const fileInput = document.getElementById('file-laporan');
+            const btnUpload = this;
+
+            if (fileInput.files.length === 0) return alert("Pilih file PDF terlebih dahulu!");
+            if (fileInput.files[0].size > 2 * 1024 * 1024) return alert("File PDF terlalu besar! Maksimal 2MB.");
+
+            const formData = new FormData();
+            formData.append('laporan_pdf', fileInput.files[0]);
+            formData.append('nip', nipInput.value);
+
+            btnUpload.disabled = true;
+            uploadStatus.innerHTML =
+                '<span class="text-primary animate__animated animate__pulse animate__infinite d-block">Sedang mengunggah...</span>';
+
+            fetch('{{ route('absen.uploadLaporan') }}', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        image: dataURI,
-                        nip: nipInput.value,
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    })
+                    body: formData
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -163,50 +281,16 @@
                         alert(data.message);
                         window.location.reload();
                     } else {
-                        alert("Gagal: " + data.message);
-                        btnCapture.innerHTML = originalText;
-                        btnCapture.disabled = false;
+                        alert(data.message);
+                        btnUpload.disabled = false;
+                        uploadStatus.innerText = "";
                     }
                 })
                 .catch(err => {
-                    alert("Terjadi kesalahan sistem.");
-                    btnCapture.innerHTML = originalText;
-                    btnCapture.disabled = false;
+                    alert("Gagal mengunggah laporan.");
+                    btnUpload.disabled = false;
+                    uploadStatus.innerText = "";
                 });
-            }, (error) => {
-                alert("Izin lokasi (GPS) wajib aktif!");
-                btnCapture.innerHTML = originalText;
-                btnCapture.disabled = false;
-            });
-        });
-
-        // Handler Upload Laporan
-        document.getElementById('btn-upload-pdf').addEventListener('click', function() {
-            const fileInput = document.getElementById('file-laporan');
-            if (fileInput.files.length === 0) return alert("Pilih file PDF!");
-
-            const formData = new FormData();
-            formData.append('laporan_pdf', fileInput.files[0]);
-            formData.append('nip', nipInput.value);
-
-            this.disabled = true;
-            document.getElementById('upload-status').innerText = "Mengunggah...";
-
-            fetch('{{ route('absen.uploadLaporan') }}', {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    window.location.reload(); // Refresh untuk update status tombol
-                } else {
-                    alert(data.message);
-                    this.disabled = false;
-                }
-            });
         });
     </script>
 @endpush

@@ -17,17 +17,8 @@
             text-align: center;
             margin-bottom: 20px;
             border-bottom: 3px double #000;
-            /* Garis ganda khas surat dinas */
             padding-bottom: 10px;
             position: relative;
-        }
-
-        /* Styling Logo di PDF (Opsional jika ingin pakai logo) */
-        .logo-kiri {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 60px;
         }
 
         .header h2,
@@ -93,31 +84,41 @@
 
 <body>
     <div class="header">
-        {{-- Jika ingin menambah logo, uncomment baris di bawah ini --}}
-        {{-- <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('img/logo-kemenkes.png'))) }}" class="logo-kiri"> --}}
-
         <h3>KEMENTERIAN KESEHATAN REPUBLIK INDONESIA</h3>
         <h2>BALAI KEKARANTINAAN KESEHATAN KELAS I PONTIANAK</h2>
         <p>Jl. Jenderal Ahmad Yani, Arang Limbung, Kec. Sungai Raya, Kabupaten Kubu Raya, Kalimantan Barat 78391</p>
     </div>
 
-    <table class="info-laporan" style="border: none;">
+    {{-- Tabel Informasi Filter Laporan --}}
+    <table class="info-laporan" style="border: none; margin-bottom: 20px;">
         <tr style="border: none;">
-            <td style="border: none; width: 100px;"><strong>Jenis Laporan</strong></td>
-            <td style="border: none;">: Rekapitulasi Absensi Pegawai</td>
-            <td style="border: none; text-align: right;">
-                <strong>Periode:</strong>
+            <td style="border: none; width: 15%;"><strong>Jenis Laporan</strong></td>
+            <td style="border: none; width: 35%;">: Rekapitulasi Absensi Pegawai</td>
+
+            <td style="border: none; width: 15%;"><strong>Periode</strong></td>
+            <td style="border: none; width: 35%;">:
                 {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }} s/d
                 {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}
             </td>
         </tr>
         <tr style="border: none;">
             <td style="border: none;"><strong>Nama Pegawai</strong></td>
+            {{-- Menggunakan variabel $user yang dikirim dari controller --}}
             <td style="border: none;">: {{ $user->name ?? 'Semua Pegawai' }}</td>
-            <td style="border: none; text-align: right;"><strong>Dicetak:</strong> {{ $tanggal_cetak }}</td>
+
+            <td style="border: none;"><strong>Dicetak</strong></td>
+            <td style="border: none;">: {{ $tanggal_cetak }}</td>
+        </tr>
+        <tr style="border: none;">
+            <td style="border: none;"><strong>Tim Kerja</strong></td>
+            <td style="border: none;">: {{ $tim_filter }}</td>
+
+            <td style="border: none;"><strong>Tipe Absen</strong></td>
+            <td style="border: none;">: {{ strtoupper($tipe_filter ?? 'Semua') }}</td>
         </tr>
     </table>
 
+    {{-- Tabel Data Absensi --}}
     <table>
         <thead>
             <tr>
@@ -125,6 +126,7 @@
                 <th>Tanggal</th>
                 <th>Nama Pegawai</th>
                 <th>NIP</th>
+                <th>Tipe</th>
                 <th>Jam Masuk</th>
                 <th>Jam Pulang</th>
                 <th>Status</th>
@@ -134,10 +136,10 @@
             @forelse($attendances as $index => $a)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    {{-- PERBAIKAN: Gunakan created_at untuk tanggal record jika check_in_time null --}}
                     <td class="text-center">{{ \Carbon\Carbon::parse($a->created_at)->translatedFormat('d/m/Y') }}</td>
                     <td>{{ $a->user->name ?? 'User Terhapus' }}</td>
                     <td class="text-center">{{ $a->user->nip ?? '-' }}</td>
+                    <td class="text-center">{{ $a->tipe_absen ?? '-' }}</td>
                     <td class="text-center">
                         {{ $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time)->format('H:i') : '-' }}</td>
                     <td class="text-center">
@@ -150,8 +152,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 20px;">Tidak ada data absensi untuk periode
-                        ini.</td>
+                    <td colspan="8" class="text-center" style="padding: 20px;">Tidak ada data absensi untuk periode ini.</td>
                 </tr>
             @endforelse
         </tbody>

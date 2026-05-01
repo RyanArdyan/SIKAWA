@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage; // Tambahan untuk helper foto
 
 class User extends Authenticatable
 {
@@ -17,7 +18,7 @@ class User extends Authenticatable
 
     /**
      * Kolom yang tidak boleh diisi secara mass-assignment.
-     * Karena Anda menggunakan $guarded = [], berarti semua kolom boleh diisi.
+     * Karena menggunakan $guarded = [], berarti semua kolom boleh diisi.
      */
     protected $guarded = [];
 
@@ -57,8 +58,18 @@ class User extends Authenticatable
     }
 
     /**
+     * HELPER BARU: Mendapatkan URL foto profil.
+     * Memudahkan Anda memanggil $user->avatar_url di file Blade.
+     */
+    public function getAvatarUrlAttribute()
+    {
+        return $this->foto_path
+            ? Storage::url($this->foto_path)
+            : asset('images/default-avatar.png');
+    }
+
+    /**
      * Fungsi Otorisasi: Mengecek apakah user adalah Admin atau Super Admin.
-     * Gunakan ini untuk memberikan akses ke Dashboard Backend.
      */
     public function isAdmin(): bool
     {
@@ -67,7 +78,6 @@ class User extends Authenticatable
 
     /**
      * Fungsi Otorisasi: Mengecek apakah user adalah Super Admin.
-     * Gunakan ini khusus untuk fitur Kelola Admin/Akses Sensitif.
      */
     public function isSuperAdmin(): bool
     {

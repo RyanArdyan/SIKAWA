@@ -183,12 +183,12 @@
                                 <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
                             </a>
                         </li>
-                        <li class="nav-item">
+                        {{-- <li class="nav-item">
                             <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
                                 href="/admin/locations">
                                 <i class="bi bi-geo-alt me-2"></i> Setel IP
                             </a>
-                        </li>
+                        </li> --}}
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}"
                                 href="{{ route('admin.settings') }}">
