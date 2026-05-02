@@ -319,13 +319,15 @@ class AttendanceController extends Controller
         // 1. Ambil semua parameter filter dari URL (Query String)
         $nip = $request->query('nip');
         $timKerjaId = $request->query('tim_kerja_id');
-        $tipe_absen = $request->query('tipe_absen');
+
+        // Perbaikan: Gunakan camelCase agar konsisten dengan variabel di Blade Anda
+        $tipeAbsen = $request->query('tipe_absen');
 
         // 2. Set default rentang tanggal: Awal bulan ini sampai hari ini
         $start_date = $request->query('start_date', \Illuminate\Support\Carbon::now()->startOfMonth()->toDateString());
         $end_date = $request->query('end_date', \Illuminate\Support\Carbon::now()->toDateString());
 
-        // 3. Inisialisasi Query dengan Eager Loading (user dan tim_kerja)
+        // 3. Inisialisasi Query dengan Eager Loading
         $query = Attendance::with(['user.tim_kerja']);
 
         // 4. Filter NIP atau Nama Pegawai
@@ -344,8 +346,9 @@ class AttendanceController extends Controller
         }
 
         // 6. Filter Tipe Absen (WFA/WFO)
-        if ($tipe_absen && $tipe_absen !== 'semua') {
-            $query->where('tipe_absen', $tipe_absen);
+        // Menggunakan variabel $tipeAbsen yang sudah diperbaiki
+        if ($tipeAbsen && $tipeAbsen !== 'semua') {
+            $query->where('tipe_absen', $tipeAbsen);
         }
 
         // 7. Filter Rentang Tanggal menggunakan created_at
@@ -356,16 +359,16 @@ class AttendanceController extends Controller
             ]);
         }
 
-        // 8. Ambil data terbaru (latest)
+        // 8. Ambil data terbaru
         $attendances = $query->latest()->get();
 
-        // 9. Ambil data pendukung untuk dropdown filter di View
+        // 9. Ambil data pendukung untuk dropdown
         $timKerjas = TimKerja::all();
 
         // Ambil jam masuk dari tabel settings (default 08:00)
         $jamMasuk = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
 
-        // 10. Kirim semua variabel ke view agar form filter tetap terisi (Keep State)
+        // 10. Kirim semua variabel ke view (Pastikan tipeAbsen dikirim)
         return view('admin.absensi.index', compact(
             'attendances',
             'timKerjas',
@@ -374,7 +377,7 @@ class AttendanceController extends Controller
             'timKerjaId',
             'start_date',
             'end_date',
-            'tipe_absen'
+            'tipeAbsen'
         ));
     }
 
