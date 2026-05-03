@@ -535,44 +535,31 @@ class AttendanceController extends Controller
         return $pdf->download('Laporan_Absensi_BKK_'.date('Ymd_His').'.pdf');
     }
 
-    public function batchDelete(Request $request)
+    public function showDeletePage()
     {
-        // Gunakan filter yang sama dengan fungsi laporan untuk memastikan data yang dihapus akurat
-        $query = Attendance::query();
+        // Mengarahkan ke file view hapus.blade.php
+        return view('admin.absensi.hapus');
+    }
 
-        if ($request->start_date && $request->end_date) {
-            $query->whereBetween('check_in_time', [
-                Carbon::parse($request->start_date)->startOfDay(),
-                Carbon::parse($request->end_date)->endOfDay(),
-            ]);
-        }
+    public function processDelete(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
-        if ($request->nip) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('nip', 'like', '%'.$request->nip.'%')
-                    ->orWhere('name', 'like', '%'.$request->nip.'%');
-            });
-        }
+        // Format tanggal agar mencakup waktu dari 00:00:00 sampai 23:59:59
+        $startDate = Carbon::parse($request->start_date)->startOfDay();
+        $endDate = Carbon::parse($request->end_date)->endOfDay();
 
-        if ($request->tim_kerja_id) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('tim_kerja_id', $request->tim_kerja_id);
-            });
-        }
+        // Ambil data yang berada di rentang tanggal tersebut (berdasarkan check_in_time)
+        $attendances = Attendance::whereBetween('check_in_time', [$startDate, $endDate])->get();
 
-        if ($request->tipe_absen) {
-            $query->where('tipe_absen', $request->tipe_absen);
-        }
+        $deletedCount = 0;
 
-        $attendances = $query->get();
-
-        if ($attendances->isEmpty()) {
-            return back()->with('error', 'Tidak ada data yang sesuai untuk dihapus.');
-        }
-
-        $count = 0;
         foreach ($attendances as $attendance) {
-            // Hapus file fisik dari storage agar tidak membebani server
+            // Hapus file fisik dari storage jika ada (sesuai field di database Anda)
             if ($attendance->photo_path) {
                 Storage::disk('public')->delete($attendance->photo_path);
             }
@@ -583,10 +570,12 @@ class AttendanceController extends Controller
                 Storage::disk('public')->delete($attendance->laporan_pdf);
             }
 
+            // Hapus data dari database
             $attendance->delete();
-            $count++;
+            $deletedCount++;
         }
 
-        return back()->with('success', "Berhasil menghapus $count data beserta file lampirannya.");
+        // Kembali ke halaman form dengan pesan sukses
+        return redirect()->back()->with('success', "Berhasil! $deletedCount data absensi beserta file fotonya telah dihapus permanen.");
     }
 }

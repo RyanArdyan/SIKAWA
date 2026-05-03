@@ -175,6 +175,12 @@
                                     <i class="bi bi-shield-lock me-2"></i> Kelola Admin
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/absensi/hapus-massal*') ? 'active' : '' }}"
+                                    href="/admin/absensi/hapus-massal">
+                                    <i class="bi bi-trash3 me-2"></i> Hapus Absensi Massal
+                                </a>
+                            </li>
                         @endif
 
                         <li class="nav-item">

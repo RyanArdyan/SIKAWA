@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Attendance;
 use App\Models\TimKerja;
 use App\Models\User;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -19,14 +20,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Buat atau Ambil Tim Kerja
-        // Gunakan updateOrCreate agar data selalu sinkron tanpa duplikat
         $tim = TimKerja::updateOrCreate(
             ['nama' => 'Adum'],
             ['ketua_id' => null]
         );
 
-        // 2. Buat Admin (User ID 1)
-        User::updateOrCreate(
+        // 2. Buat Daftar User dalam Array agar bisa di-looping
+        $users = [];
+
+        // Admin BKK (NIP: 123456)
+        $users[] = User::updateOrCreate(
             ['email' => 'admin@bkk.com'],
             [
                 'tim_kerja_id' => $tim->id,
@@ -37,56 +40,68 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 3. Buat Pegawai (User ID 2) - PENTING: Supaya data absen punya pemilik
-        $pegawai = User::updateOrCreate(
+        // Ardyan Pegawai (NIP: 123456789)
+        $users[] = User::updateOrCreate(
             ['email' => 'pegawai@bkk.com'],
             [
                 'tim_kerja_id' => $tim->id,
                 'name' => 'Ardyan Pegawai',
                 'password' => bcrypt('password123'),
                 'role' => 'pegawai',
-                'nip' => '123456789', // NIP yang nanti kamu tes di halaman riwayat
+                'nip' => '123456789',
             ]
         );
 
-        $userId = $pegawai->id; // Mengambil ID otomatis dari user kedua
+        // 3. Tambahkan Setting Jam Masuk jika belum ada
+        Setting::updateOrCreate(
+            ['key' => 'jam_masuk'],
+            ['value' => '08:00']
+        );
+
         $startDate = Carbon::now()->subDays(60);
 
-        $this->command->info('Memulai seeding data absen untuk '.$pegawai->name.'...');
+        // 4. Looping untuk setiap User agar data seimbang
+        foreach ($users as $user) {
+            $this->command->info('Memulai seeding data absen untuk ' . $user->name . '...');
 
-        for ($i = 0; $i <= 60; $i++) {
-            $currentDate = (clone $startDate)->addDays($i);
+            for ($i = 0; $i <= 60; $i++) {
+                $currentDate = (clone $startDate)->addDays($i);
 
-            // Abaikan hari libur
-            if ($currentDate->isWeekend()) {
-                continue;
-            }
+                // Abaikan hari libur (Sabtu & Minggu)
+                if ($currentDate->isWeekend()) {
+                    continue;
+                }
 
-            // Cek apakah data absen di tanggal tersebut sudah ada
-            $exists = Attendance::where('user_id', $userId)
-                ->whereDate('created_at', $currentDate)
-                ->exists();
+                // Cek apakah data absen untuk user ini di tanggal tersebut sudah ada
+                $exists = Attendance::where('user_id', $user->id)
+                    ->whereDate('created_at', $currentDate)
+                    ->exists();
 
-            if (! $exists) {
-                // Jam masuk acak 07:00 - 08:30
-                $checkIn = (clone $currentDate)->setTime(rand(7, 8), rand(0, 59));
-                // Jam pulang acak 16:00 - 17:00
-                $checkOut = (clone $currentDate)->setTime(rand(16, 17), rand(0, 59));
+                if (!$exists) {
+                    // Jam masuk acak 07:00 - 08:30
+                    $checkIn = (clone $currentDate)->setTime(rand(7, 8), rand(0, 59));
+                    // Jam pulang acak 16:00 - 17:00
+                    $checkOut = (clone $currentDate)->setTime(rand(16, 17), rand(0, 59));
 
-                Attendance::create([
-                    'user_id' => $userId,
-                    'photo_path' => 'dummy/masuk.jpg',
-                    'check_in_time' => $checkIn,
-                    'check_out_time' => $checkOut,
-                    'status' => $checkIn->format('H:i') > '08:00' ? 'terlambat' : 'hadir',
-                    'latitude_in' => '-0.02'.rand(100, 999),
-                    'longitude_in' => '109.34'.rand(100, 999),
-                    'created_at' => $currentDate,
-                    'updated_at' => $currentDate,
-                ]);
+                    // Logika agar WFO dan WFA seimbang (bergantian setiap hari)
+                    $tipeAbsen = ($i % 2 == 0) ? 'WFO' : 'WFA';
+
+                    Attendance::create([
+                        'user_id' => $user->id,
+                        'photo_path' => 'dummy/masuk.jpg',
+                        'check_in_time' => $checkIn,
+                        'check_out_time' => $checkOut,
+                        'status' => $checkIn->format('H:i') > '08:00' ? 'terlambat' : 'hadir',
+                        'latitude_in' => '-0.02' . rand(100, 999),
+                        'longitude_in' => '109.34' . rand(100, 999),
+                        'tipe_absen' => $tipeAbsen,
+                        'created_at' => $currentDate,
+                        'updated_at' => $currentDate,
+                    ]);
+                }
             }
         }
 
-        $this->command->info('Seeding selesai! Pegawai Dummy: '.$pegawai->nip);
+        $this->command->info('Seeding selesai! Data User dan Tipe Absen (WFO/WFA) sekarang seimbang.');
     }
 }

@@ -3,16 +3,6 @@
 @section('header', 'Laporan Absensi Pegawai')
 
 @section('content')
-    <form id="form-batch-delete" action="{{ route('admin.absensi.batchDelete') }}" method="POST" style="display: none;">
-        @csrf
-        @method('DELETE')
-        <input type="hidden" name="start_date">
-        <input type="hidden" name="end_date">
-        <input type="hidden" name="nip">
-        <input type="hidden" name="tim_kerja_id">
-        <input type="hidden" name="tipe_absen">
-    </form>
-
     {{-- Form Filter --}}
     <div class="card border-0 shadow-sm mb-4 bg-body-tertiary">
         <div class="card-body p-4">
@@ -75,27 +65,9 @@
                     </button>
 
                     @if ($attendances->count() > 0)
-                        <div class="dropdown w-100">
-                            <button class="btn btn-secondary dropdown-toggle w-100 shadow-sm fw-bold" type="button"
-                                data-bs-toggle="dropdown">
-                                <i class="bi bi-download"></i> Aksi
-                            </button>
-                            <ul class="dropdown-menu shadow border-0">
-                                <li>
-                                    <a class="dropdown-item" href="#" id="btn-export-pdf">
-                                        <i class="bi bi-file-pdf text-danger"></i> Export PDF
-                                    </a>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="#" id="btn-batch-delete">
-                                        <i class="bi bi-trash"></i> Hapus Massal
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                        <a href="#" id="btn-export-pdf" class="btn btn-danger w-100 shadow-sm fw-bold">
+                            <i class="bi bi-file-pdf"></i> PDF
+                        </a>
                     @endif
                 </div>
             </form>
@@ -211,65 +183,41 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        document.getElementById('btn-export-pdf').addEventListener('click', function(e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle Klik Tombol Export PDF
+            const btnExportPdf = document.getElementById('btn-export-pdf');
 
-            const filterForm = document.getElementById('form-filter-laporan');
+            if (btnExportPdf) {
+                btnExportPdf.addEventListener('click', function(e) {
+                    e.preventDefault();
 
-            // Pastikan format yang dikirim ke URL adalah YYYY-MM-DD
-            let startDate = filterForm.querySelector('input[name="start_date"]').value;
-            let endDate = filterForm.querySelector('input[name="end_date"]').value;
+                    // Ambil referensi form filter
+                    const filterForm = document.getElementById('form-filter-laporan');
 
-            const nip = filterForm.querySelector('[name="nip"]').value;
-            const timKerja = filterForm.querySelector('[name="tim_kerja_id"]').value;
-            const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]').value;
+                    // Ambil nilai dari setiap input filter
+                    let startDate = filterForm.querySelector('input[name="start_date"]').value;
+                    let endDate = filterForm.querySelector('input[name="end_date"]').value;
+                    const nip = filterForm.querySelector('[name="nip"]').value;
+                    const timKerja = filterForm.querySelector('[name="tim_kerja_id"]').value;
+                    const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]').value;
 
-            // Susun URL secara dinamis
-            let url = "{{ route('admin.absensi.exportReportPdf') }}";
-            let params = new URLSearchParams({
-                start_date: startDate,
-                end_date: endDate,
-                nip: nip,
-                tim_kerja_id: timKerja,
-                tipe_absen: tipeAbsen
-            });
+                    // Susun URL tujuan (Route Laravel)
+                    let url = "{{ route('admin.absensi.exportReportPdf') }}";
 
-            // Eksekusi download
-            window.location.href = url + '?' + params.toString();
-        });
+                    // Masukkan parameter filter ke dalam URL Search Params
+                    let params = new URLSearchParams({
+                        start_date: startDate,
+                        end_date: endDate,
+                        nip: nip,
+                        tim_kerja_id: timKerja,
+                        tipe_absen: tipeAbsen
+                    });
 
-        document.getElementById('btn-batch-delete')?.addEventListener('click', function(e) {
-            e.preventDefault();
-
-            Swal.fire({
-                title: 'Hapus Data Massal?',
-                text: "Seluruh data absensi yang muncul di tabel saat ini beserta file fotonya akan dihapus PERMANEN!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus Semua!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const form = document.getElementById('form-batch-delete');
-
-                    // Sinkronisasi data dari form filter ke form hapus
-                    form.querySelector('[name="start_date"]').value = document.querySelector(
-                        '[name="start_date"]').value;
-                    form.querySelector('[name="end_date"]').value = document.querySelector(
-                        '[name="end_date"]').value;
-                    form.querySelector('[name="nip"]').value = document.querySelector('[name="nip"]').value;
-                    form.querySelector('[name="tim_kerja_id"]').value = document.querySelector(
-                        '[name="tim_kerja_id"]').value;
-                    form.querySelector('[name="tipe_absen"]').value = document.querySelector(
-                        '[name="tipe_absen"]').value;
-
-                    form.submit();
-                }
-            });
+                    // Eksekusi perpindahan halaman untuk memicu download file
+                    window.location.href = url + '?' + params.toString();
+                });
+            }
         });
     </script>
 @endpush
