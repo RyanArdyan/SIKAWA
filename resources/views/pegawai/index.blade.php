@@ -82,11 +82,11 @@
                     video: {
                         facingMode: "user",
                         width: {
-                            ideal: 1280
-                        },
+                            ideal: 640
+                        }, // Diubah ke 640
                         height: {
-                            ideal: 720
-                        }
+                            ideal: 480
+                        } // Diubah ke 480
                     }
                 })
                 .then(stream => {
@@ -207,10 +207,20 @@
             };
 
             navigator.geolocation.getCurrentPosition((position) => {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const dataURI = canvas.toDataURL('image/jpeg', 0.8);
+                // --- PROSES KOMPRESI & RESIZE ---
+                const targetWidth = 640;
+                const targetHeight = 480;
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                const ctx = canvas.getContext('2d');
+
+                // Menggambar video ke canvas dengan ukuran target (Resize)
+                ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+                // Kompresi kualitas ke 0.7 (70%) untuk memperkecil ukuran file base64
+                const dataURI = canvas.toDataURL('image/jpeg', 0.7);
 
                 fetch('{{ route('absen.store') }}', {
                         method: 'POST',

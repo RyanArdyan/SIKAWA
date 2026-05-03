@@ -443,11 +443,27 @@ class AttendanceController extends Controller
         // 1. Ambil semua parameter filter dari request
         $nip = $request->query('nip');
         $timKerjaId = $request->query('tim_kerja_id');
-        $start_date = $request->query('start_date');
-        $end_date = $request->query('end_date');
+        $start_raw = $request->query('start_date');
+        $end_raw = $request->query('end_date');
         $tipe_absen = $request->query('tipe_absen');
 
-        // Tambahan: Ambil data user secara spesifik untuk nama di header PDF
+        // 2. Normalisasi Format Tanggal (Mencegah error 'Unexpected character')
+        $start_date = null;
+        $end_date = null;
+
+        if ($start_raw && $end_raw) {
+            try {
+                // Coba parsing format standar database (YYYY-MM-DD)
+                $start_date = Carbon::parse($start_raw)->format('Y-m-d');
+                $end_date = Carbon::parse($end_raw)->format('Y-m-d');
+            } catch (\Exception $e) {
+                // Jika gagal (karena format d/m/Y), paksa baca format Indonesia
+                $start_date = Carbon::createFromFormat('d/m/Y', $start_raw)->format('Y-m-d');
+                $end_date = Carbon::createFromFormat('d/m/Y', $end_raw)->format('Y-m-d');
+            }
+        }
+
+        // 3. Ambil data user secara spesifik untuk nama di header PDF
         $userSelected = null;
         if ($nip) {
             $userSelected = User::where('nip', $nip)
@@ -455,10 +471,10 @@ class AttendanceController extends Controller
                 ->first();
         }
 
-        // 2. Mulai Query dengan Eager Loading
+        // 4. Mulai Query dengan Eager Loading
         $query = Attendance::with(['user.tim_kerja']);
 
-        // 3. Filter berdasarkan NIP atau Nama
+        // 5. Filter berdasarkan NIP atau Nama
         if ($nip) {
             $query->whereHas('user', function ($q) use ($nip) {
                 $q->where('nip', 'like', "%$nip%")
@@ -466,45 +482,98 @@ class AttendanceController extends Controller
             });
         }
 
-        // 4. Filter berdasarkan Tim Kerja
+        // 6. Filter berdasarkan Tim Kerja
         if ($timKerjaId) {
             $query->whereHas('user', function ($q) use ($timKerjaId) {
                 $q->where('tim_kerja_id', $timKerjaId);
             });
         }
 
-        // 5. Filter berdasarkan Tipe Absen
+        // 7. Filter berdasarkan Tipe Absen
         if ($tipe_absen && $tipe_absen !== 'semua') {
             $query->where('tipe_absen', $tipe_absen);
         }
 
-        // 6. Filter berdasarkan Rentang Tanggal
+        // 8. Filter berdasarkan Rentang Tanggal (Sudah aman karena sudah dinormalisasi)
         if ($start_date && $end_date) {
-            $query->whereBetween('created_at', [
-                Carbon::parse($start_date)->startOfDay(),
-                Carbon::parse($end_date)->endOfDay(),
-            ]);
+            $query->whereDate('check_in_time', '>=', $start_date)
+                ->whereDate('check_in_time', '<=', $end_date);
         }
 
-        // 7. Ambil data
-        $attendances = $query->orderBy('created_at', 'asc')->get();
+        // 9. Ambil data hasil filter
+        $attendances = $query->orderBy('check_in_time', 'asc')->get();
 
-        // 8. Siapkan data untuk dikirim ke View PDF
+        // 10. Siapkan data untuk dikirim ke View PDF
         $data = [
             'attendances' => $attendances,
-            'user' => $userSelected, // Mengirim objek user untuk header
-            'start_date' => $start_date,
-            'end_date' => $end_date,
+            'user' => $userSelected,
+            'start_date' => $start_date ? Carbon::parse($start_date)->format('d/m/Y') : null,
+            'end_date' => $end_date ? Carbon::parse($end_date)->format('d/m/Y') : null,
             'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
             'tim_filter' => $timKerjaId ? TimKerja::find($timKerjaId)->nama : 'Semua Tim',
             'tipe_filter' => $tipe_absen ?? 'Semua',
         ];
 
-        // 9. Generate PDF
+        // 11. Generate PDF (Gunakan Barryvdh\DomPDF\Facade\Pdf)
         $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
             ->setPaper('a4', 'landscape');
 
-        // 10. Download
+        // 12. Download dengan nama file yang unik
         return $pdf->download('Laporan_Absensi_BKK_'.date('Ymd_His').'.pdf');
+    }
+
+    public function batchDelete(Request $request)
+    {
+        // Gunakan filter yang sama dengan fungsi laporan untuk memastikan data yang dihapus akurat
+        $query = Attendance::query();
+
+        if ($request->start_date && $request->end_date) {
+            $query->whereBetween('check_in_time', [
+                Carbon::parse($request->start_date)->startOfDay(),
+                Carbon::parse($request->end_date)->endOfDay(),
+            ]);
+        }
+
+        if ($request->nip) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('nip', 'like', '%'.$request->nip.'%')
+                    ->orWhere('name', 'like', '%'.$request->nip.'%');
+            });
+        }
+
+        if ($request->tim_kerja_id) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('tim_kerja_id', $request->tim_kerja_id);
+            });
+        }
+
+        if ($request->tipe_absen) {
+            $query->where('tipe_absen', $request->tipe_absen);
+        }
+
+        $attendances = $query->get();
+
+        if ($attendances->isEmpty()) {
+            return back()->with('error', 'Tidak ada data yang sesuai untuk dihapus.');
+        }
+
+        $count = 0;
+        foreach ($attendances as $attendance) {
+            // Hapus file fisik dari storage agar tidak membebani server
+            if ($attendance->photo_path) {
+                Storage::disk('public')->delete($attendance->photo_path);
+            }
+            if ($attendance->photo_path_out) {
+                Storage::disk('public')->delete($attendance->photo_path_out);
+            }
+            if ($attendance->laporan_pdf) {
+                Storage::disk('public')->delete($attendance->laporan_pdf);
+            }
+
+            $attendance->delete();
+            $count++;
+        }
+
+        return back()->with('success', "Berhasil menghapus $count data beserta file lampirannya.");
     }
 }

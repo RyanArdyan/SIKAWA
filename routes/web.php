@@ -58,8 +58,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Laporan & Detail
     Route::get('/laporan', [AttendanceController::class, 'report'])->name('absensi.report');
-    Route::get('/laporan/export-pdf', [AttendanceController::class, 'exportReportPdf'])->name('absensi.exportPdf');
+    Route::get('/laporan/export-pdf', [AttendanceController::class, 'exportReportPdf'])->name('absensi.exportReportPdf');
     Route::get('/laporan/{id}/detail', [AttendanceController::class, 'showDetail'])->name('laporan.detail');
+    // Tambahkan ini di dalam Route::middleware(['auth', 'admin'])...
+    Route::delete('/laporan/batch-delete', [AttendanceController::class, 'batchDelete'])->name('absensi.batchDelete');
 
     // CRUD Pegawai, Tim Kerja, & Lokasi
     Route::resource('pegawai', PegawaiController::class);
