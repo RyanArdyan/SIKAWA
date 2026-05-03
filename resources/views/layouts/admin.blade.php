@@ -202,6 +202,13 @@
                             </a>
                         </li>
 
+                        <li class="nav-item mt-2">
+                            {{-- Link Lihat Frontend (Tanpa Logout) --}}
+                            <a class="nav-link opacity-75 small" href="{{ route('absen.home') }}" target="_blank">
+                                <i class="bi bi-eye me-2"></i> Lihat Halaman Absen
+                            </a>
+                        </li>
+
                         <li class="nav-item">
                             {{-- Tombol Logout Sebenarnya --}}
                             <a class="nav-link text-danger-custom" href="#"
@@ -213,13 +220,6 @@
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                 @csrf
                             </form>
-                        </li>
-
-                        <li class="nav-item mt-2">
-                            {{-- Link Lihat Frontend (Tanpa Logout) --}}
-                            <a class="nav-link opacity-75 small" href="{{ route('absen.home') }}" target="_blank">
-                                <i class="bi bi-eye me-2"></i> Lihat Halaman Absen
-                            </a>
                         </li>
                     </ul>
                 </div>

@@ -62,7 +62,7 @@
                 <h5 class="mb-0 fw-bold" style="color: #40BF89;">Selamat Datang, Admin SIKAWA</h5>
             </div>
             <div class="card-body">
-                <p class="text-body">Melalui panel ini, Anda dapat mengelola data pegawai dan memantau kehadiran pegawai secara real-time dengan bukti foto kamera belakang.</p>
+                <p class="text-body">Melalui panel ini, Anda dapat mengelola data pegawai dan memantau kehadiran pegawai secara real-time dengan bukti foto kamera depan.</p>
 
                 {{-- Mengganti alert-light dengan latar belakang transparan yang adaptif --}}
                 <div class="alert border-start border-4" style="border-color: #40BF89 !important; background-color: rgba(64, 191, 137, 0.1);">
@@ -82,3 +82,31 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function updateClock() {
+        const now = new Date();
+
+        // Menggunakan Intl.DateTimeFormat untuk memastikan format 24 jam dan timezone Asia/Jakarta (WIB)
+        const options = {
+            timeZone: 'Asia/Jakarta',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+
+        const formatter = new Intl.DateTimeFormat('en-GB', options);
+        const timeString = formatter.format(now);
+
+        document.getElementById('clock').textContent = timeString + " WIB";
+    }
+
+    // Jalankan fungsi setiap 1 detik
+    setInterval(updateClock, 1000);
+
+    // Panggil sekali di awal agar tidak menunggu 1 detik pertama
+    updateClock();
+</script>
+@endpush
