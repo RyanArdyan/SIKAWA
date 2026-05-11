@@ -8,6 +8,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\TimKerjaController;
 use App\Http\Controllers\WfoAttendanceController;
+use App\Http\Controllers\KantorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -61,10 +62,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/laporan/export-pdf', [AttendanceController::class, 'exportReportPdf'])->name('absensi.exportReportPdf');
     Route::get('/laporan/{id}/detail', [AttendanceController::class, 'showDetail'])->name('laporan.detail');
 
-    // CRUD Pegawai, Tim Kerja, & Lokasi
+    // CRUD Pegawai, Tim Kerja, & kantor
     Route::resource('pegawai', PegawaiController::class);
     Route::resource('tim-kerja', TimKerjaController::class);
     Route::resource('locations', LocationController::class);
+    Route::resource('kantor', KantorController::class);
 
     // Pengaturan Sistem
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');

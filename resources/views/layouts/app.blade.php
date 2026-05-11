@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id" id="main-html" data-bs-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,11 +15,31 @@
         /* Menggunakan variabel CSS agar fleksibel antara light/dark */
         body {
             background-color: var(--bs-body-bg);
+            /* Memanggil gambar tidayu.png */
+            background-image: url("{{ asset('background/tidayu-2.png') }}");
+            /* Agar gambar menutupi seluruh layar */
+            background-size: cover;
+            /* Agar gambar tidak ikut bergeser saat di-scroll */
+            background-attachment: fixed;
+            /* Posisi gambar di tengah */
+            background-position: center;
+            /* Agar gambar tidak berulang */
+            background-repeat: no-repeat;
+
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+
+        /* Memberikan sedikit transparansi pada konten agar background terlihat jika diinginkan */
         .main-content {
             padding-top: 20px;
             padding-bottom: 50px;
+            min-height: 80vh;
+            /* Memastikan konten punya tinggi minimal */
+        }
+
+        /* Opsional: Jika di Dark Mode gambar ingin dibuat sedikit lebih gelap agar tulisan terbaca */
+        [data-bs-theme="dark"] body {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("{{ asset('background/tidayu.jpg') }}");
         }
     </style>
 
@@ -32,6 +53,7 @@
 
     @stack('styles')
 </head>
+
 <body>
 
     @include('components.navbar')
@@ -72,4 +94,5 @@
 
     @stack('scripts')
 </body>
+
 </html>

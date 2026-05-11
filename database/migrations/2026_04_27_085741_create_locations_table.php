@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Contoh: Gedung Utama, Pelabuhan Dwikora
-            $table->string('ip_address')->unique(); // IP Publik Kantor
-            $table->boolean('is_active')->default(true);
+            $table->string('name'); // Induk, Dwikora, Ketapang
+            $table->decimal('latitude', 10, 8);
+            $table->decimal('longitude', 11, 8);
+            $table->integer('radius')->default(500); // Radius dalam meter
             $table->timestamps();
         });
     }

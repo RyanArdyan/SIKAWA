@@ -175,13 +175,21 @@
                                     <i class="bi bi-shield-lock me-2"></i> Kelola Admin
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ Request::is('admin/absensi/hapus-massal*') ? 'active' : '' }}"
-                                    href="/admin/absensi/hapus-massal">
-                                    <i class="bi bi-trash3 me-2"></i> Hapus Absensi Massal
-                                </a>
-                            </li>
                         @endif
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/absensi/hapus-massal*') ? 'active' : '' }}"
+                                href="/admin/absensi/hapus-massal">
+                                <i class="bi bi-trash3 me-2"></i> Hapus Absensi Massal
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
+                                href="/admin/locations">
+                                <i class="bi bi-geo-alt me-2"></i> Lokasi
+                            </a>
+                        </li>
 
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('admin/laporan*') ? 'active' : '' }}"
@@ -189,12 +197,7 @@
                                 <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
                             </a>
                         </li>
-                        {{-- <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
-                                href="/admin/locations">
-                                <i class="bi bi-geo-alt me-2"></i> Setel IP
-                            </a>
-                        </li> --}}
+
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}"
                                 href="{{ route('admin.settings') }}">
