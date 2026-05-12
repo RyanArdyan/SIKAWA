@@ -97,7 +97,6 @@
 
             <td style="border: none; width: 15%;"><strong>Periode</strong></td>
             <td style="border: none; width: 35%;">:
-                {{-- Perbaikan: Variabel $start_date dan $end_date sudah berupa string dari Controller --}}
                 @if (!empty($start_date) && !empty($end_date))
                     {{ $start_date }} s/d {{ $end_date }}
                 @else
@@ -119,6 +118,14 @@
             <td style="border: none;"><strong>Tipe Absen</strong></td>
             <td style="border: none;">: {{ strtoupper($tipe_filter ?? 'Semua') }}</td>
         </tr>
+        {{-- TAMBAHAN BARIS LOKASI --}}
+        <tr style="border: none !important;">
+            <td style="border: none;"></td>
+            <td style="border: none;"></td>
+
+            <td style="border: none;"><strong>Lokasi</strong></td>
+            <td style="border: none;">: {{ $lokasi_filter }}</td>
+        </tr>
     </table>
 
     {{-- Tabel Data Absensi --}}
@@ -126,13 +133,14 @@
         <thead>
             <tr>
                 <th style="width: 30px;">No</th>
-                <th>Tanggal</th>
+                <th style="width: 80px;">Tanggal</th>
                 <th>Nama Pegawai</th>
-                <th>NIP</th>
-                <th>Tipe</th>
-                <th>Jam Masuk</th>
-                <th>Jam Pulang</th>
-                <th>Status</th>
+                <th style="width: 100px;">NIP</th>
+                <th style="width: 90px;">Tipe</th> {{-- Lebar ditambah untuk panah transisi --}}
+                <th style="width: 60px;">Jam Masuk</th>
+                <th style="width: 60px;">Jam Pulang</th>
+                <th style="width: 80px;">Status</th>
+                <th>Alasan Perubahan</th> {{-- Kolom Baru --}}
             </tr>
         </thead>
         <tbody>
@@ -144,7 +152,19 @@
                     </td>
                     <td>{{ $a->user->name ?? 'User Terhapus' }}</td>
                     <td class="text-center">{{ $a->user->nip ?? '-' }}</td>
-                    <td class="text-center">{{ $a->tipe_absen ?? '-' }}</td>
+
+                    {{-- Logika Transisi WFO -> WFA --}}
+                    <td class="text-center">
+                        @if (!empty($a->reason_change_status))
+                            <span style="text-decoration: line-through; color: #777;">
+                                {{ $a->tipe_absen == 'WFA' ? 'WFO' : 'WFA' }}
+                            </span>
+                            <span> -> {{ $a->tipe_absen }}</span>
+                        @else
+                            {{ $a->tipe_absen ?? '-' }}
+                        @endif
+                    </td>
+
                     <td class="text-center">
                         {{ $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time)->format('H:i') : '-' }}
                     </td>
@@ -156,10 +176,15 @@
                             {{ strtoupper($a->status) }}
                         </span>
                     </td>
+
+                    {{-- Menampilkan Alasan Perubahan --}}
+                    <td style="font-size: 8pt;">
+                        {{ $a->reason_change_status ?? '-' }}
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center" style="padding: 20px;">
+                    <td colspan="9" class="text-center" style="padding: 20px;">
                         Tidak ada data absensi untuk periode ini.
                     </td>
                 </tr>

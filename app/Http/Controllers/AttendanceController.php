@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Location;
 use App\Models\Pegawai;
 use App\Models\Setting;
 use App\Models\TimKerja;
@@ -316,30 +317,25 @@ class AttendanceController extends Controller
 
     public function report(Request $request)
     {
-        // 1. Ambil semua parameter filter dari URL (Query String)
+        // 1. Ambil semua parameter filter dari URL
         $nip = $request->query('nip');
         $timKerjaId = $request->query('tim_kerja_id');
-
-        // Menggunakan camelCase agar konsisten dengan variabel di Blade
         $tipeAbsen = $request->query('tipe_absen');
+        $locationId = $request->query('location_id'); // Parameter baru untuk filter lokasi
 
         // 2. Set default rentang tanggal: Awal bulan ini sampai hari ini
         $start_date = $request->query('start_date', \Illuminate\Support\Carbon::now()->startOfMonth()->toDateString());
         $end_date = $request->query('end_date', \Illuminate\Support\Carbon::now()->toDateString());
 
-        // 3. Inisialisasi Query dengan Eager Loading
-        $query = Attendance::with(['user.tim_kerja']);
+        // 3. Inisialisasi Query dengan Eager Loading (Memuat relasi user, tim_kerja, dan location)
+        $query = Attendance::with(['user.tim_kerja', 'location']);
 
-        // 4. Filter NIP atau Nama Pegawai (Perbaikan Bug Exact Match NIP)
+        // 4. Filter NIP atau Nama Pegawai
         if ($nip) {
             $query->whereHas('user', function ($q) use ($nip) {
                 if (is_numeric($nip)) {
-                    // Jika input angka, cari NIP yang sama persis (Exact Match)
-                    // atau nama yang mengandung angka tersebut (Wildcard)
-                    $q->where('nip', $nip)
-                        ->orWhere('name', 'like', "%{$nip}%");
+                    $q->where('nip', $nip)->orWhere('name', 'like', "%{$nip}%");
                 } else {
-                    // Jika input teks, cari nama yang mirip
                     $q->where('name', 'like', "%{$nip}%");
                 }
             });
@@ -357,7 +353,12 @@ class AttendanceController extends Controller
             $query->where('tipe_absen', $tipeAbsen);
         }
 
-        // 7. Filter Rentang Tanggal menggunakan created_at
+        // 7. TAMBAHKAN: Filter Lokasi Kantor
+        if ($locationId && $locationId !== 'semua') {
+            $query->where('location_id', $locationId);
+        }
+
+        // 8. Filter Rentang Tanggal menggunakan created_at
         if ($start_date && $end_date) {
             $query->whereBetween('created_at', [
                 \Illuminate\Support\Carbon::parse($start_date)->startOfDay(),
@@ -365,25 +366,28 @@ class AttendanceController extends Controller
             ]);
         }
 
-        // 8. Ambil data terbaru
+        // 9. Ambil data terbaru
         $attendances = $query->latest()->get();
 
-        // 9. Ambil data pendukung untuk dropdown
+        // 10. Ambil data pendukung untuk dropdown di View
         $timKerjas = TimKerja::all();
+        $locations = Location::all(); // Mengambil daftar kantor (Induk, Dwikora, dll)
 
-        // Ambil jam masuk dari tabel settings (default 08:00)
+        // Ambil jam masuk dari tabel settings
         $jamMasuk = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
 
-        // 10. Kirim semua variabel ke view
+        // 11. Kirim semua variabel ke view
         return view('admin.absensi.index', compact(
             'attendances',
             'timKerjas',
+            'locations',
             'jamMasuk',
             'nip',
             'timKerjaId',
             'start_date',
             'end_date',
-            'tipeAbsen'
+            'tipeAbsen',
+            'locationId'
         ));
     }
 
@@ -433,6 +437,7 @@ class AttendanceController extends Controller
             'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
             'tim_filter' => $user->tim_kerja->nama ?? '-', // Diambil dari relasi user ke tim_kerja
             'tipe_filter' => $tipe_absen ?? 'Semua', // Menyesuaikan variabel $tipe_filter di view
+            'lokasi_filter' => 'Semua Lokasi',
         ];
 
         // 8. Generate PDF menggunakan view yang sudah dirapikan sebelumnya
@@ -443,7 +448,6 @@ class AttendanceController extends Controller
         return $pdf->download('Riwayat_Absen_'.$nip.'_'.date('Ymd_His').'.pdf');
     }
 
-    // Tambahkan method ini di dalam class AttendanceController
     public function exportReportPdf(Request $request)
     {
         // 1. Ambil semua parameter filter dari request
@@ -452,6 +456,7 @@ class AttendanceController extends Controller
         $start_raw = $request->query('start_date');
         $end_raw = $request->query('end_date');
         $tipe_absen = $request->query('tipe_absen');
+        $locationId = $request->query('location_id');
 
         // 2. Normalisasi Format Tanggal
         $start_date = null;
@@ -459,21 +464,22 @@ class AttendanceController extends Controller
 
         if ($start_raw && $end_raw) {
             try {
+                // Mencoba parse format Y-m-d (standar input date HTML5)
                 $start_date = Carbon::parse($start_raw)->format('Y-m-d');
                 $end_date = Carbon::parse($end_raw)->format('Y-m-d');
             } catch (\Exception $e) {
+                // Fallback jika format datang dalam d/m/Y
                 $start_date = Carbon::createFromFormat('d/m/Y', $start_raw)->format('Y-m-d');
                 $end_date = Carbon::createFromFormat('d/m/Y', $end_raw)->format('Y-m-d');
             }
         }
 
-        // 3. Ambil data user secara spesifik untuk header PDF (Perbaikan Exact Match)
+        // 3. Ambil data user secara spesifik untuk header PDF
         $userSelected = null;
         if ($nip) {
             $userSelected = User::where(function ($q) use ($nip) {
                 if (is_numeric($nip)) {
-                    $q->where('nip', $nip)
-                        ->orWhere('name', 'like', "%$nip%");
+                    $q->where('nip', $nip)->orWhere('name', 'like', "%$nip%");
                 } else {
                     $q->where('name', 'like', "%$nip%");
                 }
@@ -481,14 +487,13 @@ class AttendanceController extends Controller
         }
 
         // 4. Mulai Query dengan Eager Loading
-        $query = Attendance::with(['user.tim_kerja']);
+        $query = Attendance::with(['user.tim_kerja', 'location']);
 
-        // 5. Filter NIP atau Nama (Perbaikan Exact Match agar tidak duplikat NIP mirip)
+        // 5. Filter NIP atau Nama
         if ($nip) {
             $query->whereHas('user', function ($q) use ($nip) {
                 if (is_numeric($nip)) {
-                    $q->where('nip', $nip)
-                        ->orWhere('name', 'like', "%$nip%");
+                    $q->where('nip', $nip)->orWhere('name', 'like', "%$nip%");
                 } else {
                     $q->where('name', 'like', "%$nip%");
                 }
@@ -502,37 +507,46 @@ class AttendanceController extends Controller
             });
         }
 
-        // 7. Filter berdasarkan Tipe Absen
+        // 7. Filter berdasarkan Tipe Absen (WFO/WFA)
         if ($tipe_absen && $tipe_absen !== 'semua') {
             $query->where('tipe_absen', $tipe_absen);
         }
 
-        // 8. Filter berdasarkan Rentang Tanggal
+        // 8. Filter berdasarkan Lokasi Kantor (Kunci perbaikan Screenshot 2026-05-12 123726.png)
+        if ($locationId && $locationId !== 'semua') {
+            $query->where('location_id', $locationId);
+        }
+
+        // 9. Filter berdasarkan Rentang Tanggal (Konsisten dengan check_in_time)
         if ($start_date && $end_date) {
             $query->whereDate('check_in_time', '>=', $start_date)
                 ->whereDate('check_in_time', '<=', $end_date);
         }
 
-        // 9. Ambil data hasil filter
+        // 10. Ambil data hasil filter dengan urutan waktu masuk
         $attendances = $query->orderBy('check_in_time', 'asc')->get();
 
-        // 10. Siapkan data untuk dikirim ke View PDF
+        // 11. Siapkan data pendukung untuk header laporan agar tidak error saat find()
+        $timObj = ($timKerjaId && $timKerjaId !== 'semua') ? TimKerja::find($timKerjaId) : null;
+        $locObj = ($locationId && $locationId !== 'semua') ? Location::find($locationId) : null;
+
         $data = [
             'attendances' => $attendances,
             'user' => $userSelected,
             'start_date' => $start_date ? Carbon::parse($start_date)->format('d/m/Y') : null,
             'end_date' => $end_date ? Carbon::parse($end_date)->format('d/m/Y') : null,
             'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
-            'tim_filter' => $timKerjaId ? TimKerja::find($timKerjaId)->nama : 'Semua Tim',
-            'tipe_filter' => $tipe_absen ?? 'Semua',
+            'tim_filter' => $timObj ? $timObj->nama : 'Semua Tim',
+            'tipe_filter' => strtoupper($tipe_absen ?? 'Semua'),
+            'lokasi_filter' => $locObj ? $locObj->name : 'Semua Lokasi',
         ];
 
-        // 11. Generate PDF
+        // 12. Generate PDF (Landscape agar kolom muat)
         $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
             ->setPaper('a4', 'landscape');
 
-        // 12. Download
-        return $pdf->download('Laporan_Absensi_BKK_'.date('Ymd_His').'.pdf');
+        // 13. Download dengan nama file unik
+        return $pdf->download('Laporan_Absensi_SIKAWA_'.date('Ymd_His').'.pdf');
     }
 
     public function showDeletePage()
@@ -577,5 +591,22 @@ class AttendanceController extends Controller
 
         // Kembali ke halaman form dengan pesan sukses
         return redirect()->back()->with('success', "Berhasil! $deletedCount data absensi beserta file fotonya telah dihapus permanen.");
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'tipe_absen' => 'required|in:WFO,WFA',
+            'reason_change_status' => 'required|string|min:5',
+        ]);
+
+        $attendance = Attendance::findOrFail($id);
+
+        $attendance->update([
+            'tipe_absen' => $request->tipe_absen,
+            'reason_change_status' => $request->reason_change_status,
+        ]);
+
+        return redirect()->back()->with('success', 'Status absensi berhasil diperbarui.');
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Attendance extends Model
 {
@@ -35,7 +35,7 @@ class Attendance extends Model
      */
     public function isWorkDurationMet()
     {
-        if (!$this->check_in_time) {
+        if (! $this->check_in_time) {
             return false;
         }
 
@@ -48,7 +48,9 @@ class Attendance extends Model
      */
     public function getMinCheckOutTime()
     {
-        if (!$this->check_in_time) return null;
+        if (! $this->check_in_time) {
+            return null;
+        }
 
         return $this->check_in_time->addHours(8)->format('H:i');
     }
@@ -59,8 +61,16 @@ class Attendance extends Model
      */
     public function getMinUploadTime()
     {
-        if (!$this->check_in_time) return null;
+        if (! $this->check_in_time) {
+            return null;
+        }
 
         return $this->check_in_time->addHour()->format('H:i');
+    }
+
+    // Relasi ke Location (Baru)
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 }

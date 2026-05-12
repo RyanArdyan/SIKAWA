@@ -57,16 +57,16 @@ class WfoAttendanceController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Ambil data pegawai berdasarkan NIP yang dikirim dari Frontend
         $pegawai = User::where('nip', $request->nip)->first();
         $today = Carbon::today();
         $now = Carbon::now();
 
-        // 1. Validasi Pegawai
         if (! $pegawai) {
             return response()->json(['success' => false, 'message' => 'Pegawai tidak ditemukan']);
         }
 
-        // 2. Ambil Koordinat dari Request (Dikirim oleh JavaScript)
+        // 2. Ambil Koordinat dari Request (dikirim via JavaScript navigator.geolocation)
         $userLat = $request->latitude;
         $userLon = $request->longitude;
 
@@ -77,14 +77,13 @@ class WfoAttendanceController extends Controller
             ]);
         }
 
-        // 3. LOGIKA RADIUS (Geofencing)
-        // Mengambil semua lokasi kantor dari database (Induk, Dwikora, Ketapang, dll)
+        // 3. LOGIKA RADIUS (Haversine Formula)
+        // Mencari apakah koordinat user masuk ke salah satu radius kantor di tabel locations
         $locations = Location::all();
         $currentLocation = null;
 
         foreach ($locations as $loc) {
-            // Rumus Haversine untuk menghitung jarak antara koordinat user dan koordinat kantor
-            $earthRadius = 6371000; // Radius bumi dalam meter
+            $earthRadius = 6371000; // Dalam meter
 
             $dLat = deg2rad($loc->latitude - $userLat);
             $dLon = deg2rad($loc->longitude - $userLon);
@@ -96,10 +95,10 @@ class WfoAttendanceController extends Controller
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
             $distance = $earthRadius * $c;
 
-            // Cek apakah jarak pegawai masuk dalam radius kantor ini
+            // Jika jarak user <= radius kantor (misal 500m), maka lokasi ditemukan
             if ($distance <= $loc->radius) {
                 $currentLocation = $loc;
-                break; // Stop jika sudah ketemu lokasi yang cocok
+                break;
             }
         }
 
@@ -110,12 +109,12 @@ class WfoAttendanceController extends Controller
             ]);
         }
 
-        // 4. PROSES ABSENSI
+        // 4. CEK RIWAYAT ABSENSI HARI INI
         $attendance = Attendance::where('user_id', $pegawai->id)
             ->whereDate('check_in_time', $today)
             ->first();
 
-        // Ambil Setting Jam Masuk untuk cek keterlambatan
+        // Ambil jam masuk dari tabel settings (default 07:30)
         $settingJamMasuk = Setting::where('key', 'jam_masuk')->value('value') ?? '07:30';
         $batasTerlambat = Carbon::parse($settingJamMasuk)->addMinutes(30);
 
@@ -125,21 +124,23 @@ class WfoAttendanceController extends Controller
 
             Attendance::create([
                 'user_id' => $pegawai->id,
+                'location_id' => $currentLocation->id, // Mengisi location_id dari hasil deteksi radius
                 'check_in_time' => $now,
+                'latitude_in' => $userLat,
+                'longitude_in' => $userLon,
                 'tipe_absen' => 'WFO',
                 'status' => $isTerlambat ? 'terlambat' : 'hadir',
+                'ip_address_log' => $request->ip(),
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => "Berhasil Presensi Masuk di {$currentLocation->name}. Selamat bekerja!",
-                'is_terlambat' => $isTerlambat,
             ]);
 
         } else {
-            // --- LOGIKA ABSEN PULANG (Batasan 8 jam sudah dihapus) ---
-
-            // Cek jika sudah pernah absen pulang hari ini
+            // --- LOGIKA ABSEN PULANG ---
+            // Cek jika sudah pernah absen pulang
             if ($attendance->check_out_time) {
                 return response()->json([
                     'success' => false,
@@ -147,14 +148,16 @@ class WfoAttendanceController extends Controller
                 ]);
             }
 
+            // Update data pulang (menggunakan koordinat saat ini)
             $attendance->update([
                 'check_out_time' => $now,
+                'latitude_out' => $userLat,
+                'longitude_out' => $userLon,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => "Berhasil Presensi Pulang dari {$currentLocation->name}. Hati-hati di jalan!",
-                'is_terlambat' => false,
             ]);
         }
     }

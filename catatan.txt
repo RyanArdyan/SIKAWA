@@ -15,7 +15,9 @@ Pegawai bisa melihat rekap absen nya dan bisa di filter berdasarkan minggu dan b
 
 Admin bisa melihat rekap absen pegawai berdasarkan nip, tim kerja, hari ini,  minggu ini, dan bulan ini.
 
-
 Yang harus diselesaikan :
 Ada halaman hapus absensi. Ada input "Dari tanggal" dan input "Sampai Tanggal". Lalu ada tombol hapus, jika tombol hapus di click maka tampil sweetalert untuk konfirmasi penghapusan.
 
+12/05/2026:
+wfo -> wfa -> kasi catatan perubahan keterangan
+laporan nya bisa dilokasi

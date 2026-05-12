@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\TimKerja;
 use App\Models\User;
 use App\Models\Setting;
+use App\Models\Location;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -19,6 +20,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        Location::create([
+            'name'      => 'Kantor Induk',
+            'latitude'  => -0.13281096611215687, // Contoh koordinat Pontianak
+            'longitude' => 109.40759729246757,
+            'radius'    => 500,
+        ]);
+
+        // -0.01940158279272492, 109.3340003789756
+        Location::create([
+            'name'      => 'Kantor Pelabuhan Dwikora',
+            'latitude'  => -0.01940158279272492, // Contoh koordinat Pontianak
+            'longitude' => 109.3340003789756,
+            'radius'    => 500,
+        ]);
+
+        // -1.793972197385818, 109.95537323850277
+        Location::create([
+            'name'      => 'BKK Ketapang',
+            'latitude'  => -1.793972197385818, // Contoh koordinat Pontianak
+            'longitude' => 109.95537323850277,
+            'radius'    => 500,
+        ]);
+
+        // 0.5053849531197078, 108.9172385961722
+        Location::create([
+            'name'      => 'BKK Kijing',
+            'latitude'  => 0.5053849531197078, // Contoh koordinat Pontianak
+            'longitude' => 108.9172385961722,
+            'radius'    => 500,
+        ]);
+
         // 1. Buat atau Ambil Tim Kerja
         $tim = TimKerja::updateOrCreate(
             ['nama' => 'Adum'],

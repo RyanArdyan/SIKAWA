@@ -43,6 +43,19 @@
                     </select>
                 </div>
 
+                {{-- FILTER BARU: Lokasi Kantor --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-body-secondary">Lokasi Kantor</label>
+                    <select name="location_id" class="form-select bg-body border-secondary-subtle text-body">
+                        <option value="">Semua Lokasi</option>
+                        @foreach ($locations as $loc)
+                            <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>
+                                {{ $loc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- Filter Tanggal Mulai --}}
                 <div class="col-md-2">
                     <label class="form-label fw-bold text-body-secondary">Dari Tanggal</label>
@@ -96,6 +109,7 @@
                             <th class="py-3 text-body-secondary">Absen Masuk</th>
                             <th class="py-3 text-body-secondary">Absen Pulang</th>
                             <th class="py-3 text-body-secondary">Status</th>
+                            <th class="py-3 text-body-secondary">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -117,16 +131,42 @@
                                         <i class="bi bi-people-fill small"></i>
                                         {{ $a->user->tim_kerja->nama ?? 'Tanpa Tim' }}
                                     </small>
+                                    {{-- TAMBAHKAN LOKASI DI SINI --}}
+                                    @if ($a->location)
+                                        <br>
+                                        <small class="text-primary fw-bold" style="font-size: 0.70rem;">
+                                            <i class="bi bi-geo-alt-fill small"></i> {{ $a->location->name }}
+                                        </small>
+                                    @endif
                                 </td>
 
-                                {{-- Tipe Absen (WFO / WFA) --}}
+                                {{-- Tipe Absen (WFO / WFA) dengan Riwayat Perubahan --}}
                                 <td class="text-center">
-                                    @if ($a->tipe_absen == 'WFO')
-                                        <span
-                                            class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2">WFO</span>
+                                    @if ($a->reason_change_status)
+                                        {{-- Tampilan jika status telah diubah oleh Admin --}}
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span
+                                                class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 mb-1">
+                                                <small class="text-decoration-line-through">
+                                                    {{ $a->tipe_absen == 'WFA' ? 'WFO' : 'WFA' }}
+                                                </small>
+                                                <i class="bi bi-arrow-right mx-1"></i>
+                                                {{ $a->tipe_absen }}
+                                            </span>
+                                        </div>
                                     @else
-                                        <span
-                                            class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2">WFA</span>
+                                        {{-- Tampilan asli jika belum pernah diubah --}}
+                                        @if ($a->tipe_absen == 'WFO')
+                                            <span
+                                                class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2">
+                                                WFO
+                                            </span>
+                                        @else
+                                            <span
+                                                class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2">
+                                                WFA
+                                            </span>
+                                        @endif
                                     @endif
                                 </td>
 
@@ -166,6 +206,16 @@
                                         </span>
                                     @endif
                                 </td>
+
+                                <td class="text-center">
+                                    <span>
+                                        <button type="button" class="btn btn-sm btn-outline-warning"
+                                            onclick="openEditModal('{{ route('admin.absensi.updateStatus', $a->id) }}', '{{ $a->tipe_absen }}', '{{ $a->reason_change_status }}')"
+                                            title="Ubah Status">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                    </span>
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -178,6 +228,41 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Status -->
+    <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="formEditStatus" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ubah Tipe Absensi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tipe Absen Baru</label>
+                            <select name="tipe_absen" id="edit_tipe_absen" class="form-select" required>
+                                <option value="WFO">WFO (Work From Office)</option>
+                                <option value="WFA">WFA (Work From Anywere)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Alasan Perubahan</label>
+                            <textarea id="edit_reason" name="reason_change_status" class="form-textarea w-100" rows="3"
+                                placeholder="Contoh: Kesalahan sistem saat pemilihan lokasi" required minlength="5"></textarea>
+                            <small class="text-muted">Wajib diisi sebagai log audit.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 @endsection
@@ -201,6 +286,7 @@
                     const nip = filterForm.querySelector('[name="nip"]').value;
                     const timKerja = filterForm.querySelector('[name="tim_kerja_id"]').value;
                     const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]').value;
+                    const locationId = filterForm.querySelector('[name="location_id"]').value;
 
                     // Susun URL tujuan (Route Laravel)
                     let url = "{{ route('admin.absensi.exportReportPdf') }}";
@@ -211,7 +297,8 @@
                         end_date: endDate,
                         nip: nip,
                         tim_kerja_id: timKerja,
-                        tipe_absen: tipeAbsen
+                        tipe_absen: tipeAbsen,
+                        location_id: locationId
                     });
 
                     // Eksekusi perpindahan halaman untuk memicu download file
@@ -219,5 +306,21 @@
                 });
             }
         });
+
+        // Tambahkan parameter 'reason' di sini -------------------- v
+        function openEditModal(url, currentType, reason) {
+            // Set Action URL Form
+            document.getElementById('formEditStatus').action = url;
+
+            // Set Nilai Default Dropdown
+            document.getElementById('edit_tipe_absen').value = currentType;
+
+            // Sekarang variabel 'reason' sudah dikenali karena sudah jadi parameter
+            document.getElementById('edit_reason').value = reason || '';
+
+            // Tampilkan Modal
+            var myModal = new bootstrap.Modal(document.getElementById('modalEditStatus'));
+            myModal.show();
+        }
     </script>
 @endpush

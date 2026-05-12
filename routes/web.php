@@ -37,6 +37,7 @@ Route::get('/riwayat', [AttendanceController::class, 'riwayat'])->name('absen.ri
 Route::get('/riwayat/export', [AttendanceController::class, 'exportPdf'])->name('absen.exportPdf');
 Route::post('/absen/store', [AttendanceController::class, 'store'])->name('absen.store');
 Route::post('/absen/upload-laporan', [AttendanceController::class, 'uploadLaporan'])->name('absen.uploadLaporan');
+Route::patch('/absen/update-status/{id}', [AttendanceController::class, 'updateStatus'])->name('absen.updateStatus');
 
 // Grouping agar rapi
 Route::prefix('wfo')->group(function () {
@@ -88,4 +89,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Route untuk memproses penghapusan
     Route::delete('/absensi/hapus-massal', [AttendanceController::class, 'processDelete'])->name('absensi.processDelete');
+
+    // Pastikan baris ini ada di routes/web.php Anda
+    Route::put('/absensi/update-status/{id}', [AttendanceController::class, 'updateStatus'])->name('absensi.updateStatus');
 });

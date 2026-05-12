@@ -88,6 +88,7 @@
                             <th class="py-3 text-secondary small text-uppercase">Jam Masuk</th>
                             <th class="py-3 text-secondary small text-uppercase">Jam Pulang</th>
                             <th class="py-3 text-secondary small text-uppercase">Status</th>
+                            <th class="py-3 text-secondary small text-uppercase text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -133,6 +134,14 @@
                                         </span>
                                     @endif
                                 </td>
+
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                        style="border-radius: 8px;" data-bs-toggle="modal"
+                                        data-bs-target="#editStatusModal{{ $item->id }}">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </button>
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -148,4 +157,42 @@
             </div>
         </div>
     </div>
+
+    @foreach ($attendances as $item)
+        <div class="modal fade" id="editStatusModal{{ $item->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius: 15px;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Ubah Status Absensi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('absen.updateStatus', $item->id) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Tipe Absen</label>
+                                <select name="tipe_absen" class="form-select shadow-none" required>
+                                    <option value="WFO" {{ $item->tipe_absen == 'WFO' ? 'selected' : '' }}>WFO (Office)
+                                    </option>
+                                    <option value="WFA" {{ $item->tipe_absen == 'WFA' ? 'selected' : '' }}>WFA
+                                        (Anywhere)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Alasan Perubahan</label>
+                                <textarea name="reason_change_status" class="form-control shadow-none" rows="3"
+                                    placeholder="Contoh: Perubahan jadwal mendadak / Perintah atasan" required>{{ $item->reason_change_status }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn text-white fw-bold"
+                                style="background-color: #40BF89;">Simpan Perubahan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
 @endsection
