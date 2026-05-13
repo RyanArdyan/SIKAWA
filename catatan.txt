@@ -1,3 +1,6 @@
 Jika lupa absen datang dan lupa absen pulang.
 wfo bisa absen wfa.
 pengingat absen.
+
+
+Bagaimana jika pegawai lupa absen maka admin bisa menambahkan absen masuk dan absen keluar untuk pegawai.

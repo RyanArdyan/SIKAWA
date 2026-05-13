@@ -609,4 +609,67 @@ class AttendanceController extends Controller
 
         return redirect()->back()->with('success', 'Status absensi berhasil diperbarui.');
     }
+
+    // Menampilkan form edit lupa absen
+    public function editLupaAbsen($id)
+    {
+        $attendance = Attendance::with('user')->findOrFail($id);
+
+        return view('admin.absensi.lupa_absen', compact('attendance'));
+    }
+
+    // Memproses perubahan jam masuk dan pulang
+    public function updateLupaAbsen(Request $request, $id)
+    {
+        $request->validate([
+            'check_in_time' => 'required',
+            'check_out_time' => 'nullable',
+        ]);
+
+        $attendance = Attendance::findOrFail($id);
+
+        // Update data berdasarkan input manual admin
+        $attendance->update([
+            'check_in_time' => $request->check_in_time,
+            'check_out_time' => $request->check_out_time,
+            'status' => 'hadir',
+        ]);
+
+        return redirect()->route('admin.absensi.report')->with('success', 'Data lupa absen berhasil diperbarui.');
+    }
+
+    // Fungsi untuk menampilkan form
+    public function createManual()
+    {
+        $allPegawai = User::all(); // Mengambil semua data pegawai untuk dropdown
+        $locations = Location::all(); // Mengambil data lokasi dari tabel locations
+
+        return view('admin.absensi.create', compact('allPegawai', 'locations'));
+    }
+
+    // Fungsi untuk simpan data
+    public function storeManual(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required',
+            'check_in_time' => 'required',
+            'check_out_time' => 'required',
+            'tipe_absen' => 'required',
+        ]);
+
+        // Logika penentuan status berdasarkan jam masuk (08:00)
+        $checkIn = new Carbon($request->check_in_time);
+        $status = ($checkIn->format('H:i') > '08:00') ? 'terlambat' : 'hadir';
+
+        Attendance::create([
+            'user_id' => $request->user_id,
+            'location_id' => $request->location_id,
+            'check_in_time' => $request->check_in_time,
+            'check_out_time' => $request->check_out_time,
+            'tipe_absen' => $request->tipe_absen,
+            'status' => $status,
+        ]);
+
+        return redirect()->route('admin.absensi.report')->with('success', 'Presensi manual berhasil dibuat.');
+    }
 }

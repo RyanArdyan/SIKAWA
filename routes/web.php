@@ -62,6 +62,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/laporan', [AttendanceController::class, 'report'])->name('absensi.report');
     Route::get('/laporan/export-pdf', [AttendanceController::class, 'exportReportPdf'])->name('absensi.exportReportPdf');
     Route::get('/laporan/{id}/detail', [AttendanceController::class, 'showDetail'])->name('laporan.detail');
+    // Tambahkan ini di dalam grup middleware admin
+    Route::get('/laporan/{id}/lupa-absen', [AttendanceController::class, 'editLupaAbsen'])->name('laporan.editLupaAbsen');
+    Route::put('/laporan/{id}/update-lupa-absen', [AttendanceController::class, 'updateLupaAbsen'])->name('laporan.updateLupaAbsen');
+    Route::get('/laporan/create-manual', [AttendanceController::class, 'createManual'])->name('laporan.createManual');
+    Route::post('/laporan/store-manual', [AttendanceController::class, 'storeManual'])->name('laporan.storeManual');
 
     // CRUD Pegawai, Tim Kerja, & kantor
     Route::resource('pegawai', PegawaiController::class);

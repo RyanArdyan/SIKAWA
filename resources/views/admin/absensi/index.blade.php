@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('header', 'Laporan Absensi Pegawai')
+@section('header', 'Laporan Absensi Pegawai sfsgfds')
 
 @section('content')
     {{-- Form Filter --}}
@@ -70,18 +70,28 @@
                         value="{{ $end_date }}">
                 </div>
 
-                {{-- Ganti bagian tombol aksi Anda menjadi seperti ini --}}
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn text-white w-100 shadow-sm fw-bold"
-                        style="background-color: #40BF89; border: none;">
+                {{-- Ubah dari col-md-2 menjadi col-md-3 agar tidak terlalu sempit --}}
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    {{-- Tombol Filter --}}
+                    <button type="submit" class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
+                        style="background-color: #40BF89; border: none; height: 38px;">
                         <i class="bi bi-filter"></i> Filter
                     </button>
 
+                    {{-- Tombol PDF --}}
                     @if ($attendances->count() > 0)
-                        <a href="#" id="btn-export-pdf" class="btn btn-danger w-100 shadow-sm fw-bold">
+                        <a href="#" id="btn-export-pdf" class="btn btn-danger w-100 shadow-sm fw-bold text-nowrap"
+                            style="height: 38px; display: flex; align-items: center; justify-content: center;">
                             <i class="bi bi-file-pdf"></i> PDF
                         </a>
                     @endif
+
+                    {{-- Tombol Buat Absen --}}
+                    <a href="{{ route('admin.laporan.createManual') }}"
+                        class="btn btn-primary w-100 shadow-sm fw-bold text-nowrap"
+                        style="height: 38px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-plus-circle me-1"></i> Buat Absen
+                    </a>
                 </div>
             </form>
         </div>
@@ -209,12 +219,18 @@
 
                                 <td class="text-center">
                                     <span>
+                                        <a href="{{ route('admin.laporan.editLupaAbsen', $a->id) }}"
+                                            class="btn btn-sm btn-outline-warning shadow-sm me-1" title="Lupa Absen">
+                                            <i class="bi bi-clock-history"></i>
+                                        </a>
+
                                         <button type="button" class="btn btn-sm btn-outline-warning"
                                             onclick="openEditModal('{{ route('admin.absensi.updateStatus', $a->id) }}', '{{ $a->tipe_absen }}', '{{ $a->reason_change_status }}')"
                                             title="Ubah Status">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                     </span>
+
                                 </td>
                             </tr>
                         @empty
