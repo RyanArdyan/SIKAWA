@@ -27,6 +27,14 @@ class DatabaseSeeder extends Seeder
             'radius'    => 500,
         ]);
 
+        // -0.14613959227717144, 109.4068679791256
+        Location::create([
+            'name'      => 'Pos Bandara Supadio',
+            'latitude'  => -0.14613959227717144, // Contoh koordinat Pontianak
+            'longitude' => 109.4068679791256,
+            'radius'    => 500,
+        ]);
+
         // -0.01940158279272492, 109.3340003789756
         Location::create([
             'name'      => 'Kantor Pelabuhan Dwikora',
