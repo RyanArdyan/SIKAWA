@@ -36,8 +36,8 @@
                 </li>
 
                 <li class="nav-item ms-lg-3">
-                    <a class="btn btn-dark btn-sm px-3 rounded-pill shadow-sm" href="/admin/dashboard">
-                        <i class="bi bi-lock-fill me-1"></i> Admin Panel
+                    <a class="btn btn-dark btn-sm px-3 rounded-pill shadow-sm" href="/login">
+                        <i class="bi bi-lock-fill me-1"></i> Login
                     </a>
                 </li>
             </ul>

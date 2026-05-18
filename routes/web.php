@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +43,13 @@ Route::prefix('wfo')->group(function () {
     Route::get('/', [WfoAttendanceController::class, 'index'])->name('absen.wfo');
     Route::get('/get-pegawai/{nip}', [WfoAttendanceController::class, 'getPegawai']);
     Route::post('/store', [WfoAttendanceController::class, 'store'])->name('absen.storeWfo');
+});
+
+// rute yang sudah login
+Route::middleware('auth')->group(function () {
+    Route::get('/pegawai/biodata', [PegawaiController::class, 'editBiodata'])->name('pegawai.editBiodata');
+    Route::put('/pegawai/biodata/update', [PegawaiController::class, 'updateBiodata'])->name('pegawai.updateBiodata');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 /*

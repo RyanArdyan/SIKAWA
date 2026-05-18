@@ -88,8 +88,8 @@
 
                     {{-- Tombol Buat Absen --}}
                     <a href="{{ route('admin.laporan.createManual') }}"
-                        class="btn btn-primary w-100 shadow-sm fw-bold text-nowrap"
-                        style="height: 38px; display: flex; align-items: center; justify-content: center;">
+                        class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
+                        style="background-color: #40BF89; border: none; height: 38px;">
                         <i class="bi bi-plus-circle me-1"></i> Buat Absen
                     </a>
                 </div>

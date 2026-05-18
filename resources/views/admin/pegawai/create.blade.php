@@ -15,10 +15,10 @@
                     <form action="{{ route('admin.pegawai.store') }}" method="POST">
                         @csrf
 
+                        {{-- Input NIP --}}
                         <div class="mb-4">
                             <label class="form-label fw-bold text-body-secondary">NIP (Nomor Induk Pegawai)</label>
                             <div class="input-group">
-                                {{-- Mengganti bg-light menjadi bg-body agar sinkron dengan input --}}
                                 <span class="input-group-text bg-body border-secondary-subtle border-end-0">
                                     <i class="bi bi-card-heading text-body-secondary"></i>
                                 </span>
@@ -31,6 +31,7 @@
                             @enderror
                         </div>
 
+                        {{-- Input Nama Lengkap --}}
                         <div class="mb-4">
                             <label class="form-label fw-bold text-body-secondary">Nama Lengkap</label>
                             <div class="input-group">
@@ -47,6 +48,7 @@
                             @enderror
                         </div>
 
+                        {{-- Input Penempatan Tim Kerja --}}
                         <div class="mb-4">
                             <label class="form-label fw-bold text-body-secondary">Penempatan Tim Kerja</label>
                             <div class="input-group">
@@ -74,21 +76,84 @@
                             @enderror
                         </div>
 
-                        {{-- Tambahkan Informasi Akun Otomatis tepat sebelum tombol aksi --}}
+                        {{-- INPUT BARU: Pangkat Golongan --}}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-body-secondary">Pangkat Golongan</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                    <i class="bi bi-award text-body-secondary"></i>
+                                </span>
+                                <input type="text" name="pangkat_golongan"
+                                    class="form-control bg-body border-secondary-subtle text-body border-start-0 @error('pangkat_golongan') is-invalid @enderror"
+                                    placeholder="Contoh: IV/b" value="{{ old('pangkat_golongan') }}">
+                            </div>
+                            @error('pangkat_golongan')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- INPUT BARU: Jabatan --}}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-body-secondary">Jabatan</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                    <i class="bi bi-briefcase text-body-secondary"></i>
+                                </span>
+                                <input type="text" name="jabatan"
+                                    class="form-control bg-body border-secondary-subtle text-body border-start-0 @error('jabatan') is-invalid @enderror"
+                                    placeholder="Contoh: Sanitarian Ahli Madya (JFT)" value="{{ old('jabatan') }}">
+                            </div>
+                            @error('jabatan')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- INPUT BARU: Kelas Jabatan --}}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-body-secondary">Kelas Jabatan</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                    <i class="bi bi-layers text-body-secondary"></i>
+                                </span>
+                                <input type="text" name="kelas_jabatan"
+                                    class="form-control bg-body border-secondary-subtle text-body border-start-0 @error('kelas_jabatan') is-invalid @enderror"
+                                    placeholder="Contoh: 11" value="{{ old('kelas_jabatan') }}">
+                            </div>
+                            @error('kelas_jabatan')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        {{-- INPUT BARU: Pendidikan --}}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-body-secondary">Pendidikan Terakhir</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                    <i class="bi bi-mortarboard text-body-secondary"></i>
+                                </span>
+                                <input type="text" name="pendidikan"
+                                    class="form-control bg-body border-secondary-subtle text-body border-start-0 @error('pendidikan') is-invalid @enderror"
+                                    placeholder="Contoh: S.1 Kedokteran Umum" value="{{ old('pendidikan') }}">
+                            </div>
+                            @error('pendidikan')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        {{-- Informasi Akun Otomatis --}}
                         <div class="alert border-0 bg-info bg-opacity-10 py-3 mb-4">
                             <div class="d-flex align-items-center">
                                 <div class="bg-info bg-opacity-25 rounded-circle p-2 me-3">
                                     <i class="bi bi-shield-lock-fill text-info fs-5"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-1 fw-bold text-body" style="font-size: 0.9rem;">Informasi Akun Otomatis
-                                    </h6>
+                                    <h6 class="mb-1 fw-bold text-body" style="font-size: 0.9rem;">Informasi Akun Otomatis</h6>
                                     <p class="mb-0 text-body-secondary" style="font-size: 0.85rem;">
-                                        Email: <span
-                                            class="badge bg-body text-body-secondary border border-secondary-subtle fw-medium">NIP@bkk.go.id</span>
+                                        Email: <span class="badge bg-body text-body-secondary border border-secondary-subtle fw-medium">NIP@bkk.go.id</span>
                                         <br>
-                                        Password: <span
-                                            class="badge bg-body text-body-secondary border border-secondary-subtle fw-medium">password123</span>
+                                        Password: <span class="badge bg-body text-body-secondary border border-secondary-subtle fw-medium">password123</span>
                                     </p>
                                 </div>
                             </div>
@@ -96,10 +161,8 @@
 
                         <hr class="my-4 text-muted opacity-25">
 
-                        <hr class="my-4 text-muted opacity-25">
-
+                        {{-- Tombol Aksi --}}
                         <div class="d-flex justify-content-between align-items-center">
-                            {{-- Menggunakan btn-secondary transparan untuk tombol kembali --}}
                             <a href="{{ route('admin.pegawai.index') }}"
                                 class="btn btn-secondary bg-opacity-10 text-body border-0 px-4 fw-medium">
                                 <i class="bi bi-arrow-left"></i> Kembali

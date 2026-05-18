@@ -14,22 +14,31 @@ class AuthController extends Controller
     }
 
     public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+{
+    $credentials = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+    if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
 
-            return redirect()->intended('admin/dashboard');
+        // Ambil data pengguna yang baru saja login
+        $user = Auth::user();
+
+        // Kondisi jika pengguna adalah pegawai
+        if ($user->role === 'pegawai') {
+            return redirect()->route('pegawai.editBiodata');
         }
 
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ]);
+        // Jika bukan pegawai (Admin/Super Admin), arahkan ke dashboard admin
+        return redirect()->intended('admin/dashboard');
     }
+
+    return back()->withErrors([
+        'email' => 'Email atau password salah.',
+    ]);
+}
 
     // app/Http/Controllers/AuthController.php
 

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\TimKerja;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class PegawaiController extends Controller
 {
@@ -29,24 +31,33 @@ class PegawaiController extends Controller
 
     public function store(Request $request)
     {
-        // 3. Tambahkan validasi untuk tim_kerja_id
+        // 1. Validasi Input (Tambahkan kolom baru dengan aturan 'nullable')
         $request->validate([
             'nip' => 'required|unique:users,nip',
             'name' => 'required|string|max:255',
-            'tim_kerja_id' => 'required|exists:tim_kerja,id', // Pastikan ID ada di tabel tim_kerja
-            // tambahkan validasi email/password jika diperlukan
+            'tim_kerja_id' => 'required|exists:tim_kerja,id',
+            'pangkat_golongan' => 'nullable|string|max:255',
+            'jabatan' => 'nullable|string|max:255',
+            'kelas_jabatan' => 'nullable|string|max:255',
+            'pendidikan' => 'nullable|string|max:255',
         ]);
 
-        // 4. Simpan data ke database
+        // 2. Simpan data ke database beserta data kepegawaian baru
         User::create([
             'nip' => $request->nip,
             'name' => $request->name,
             'tim_kerja_id' => $request->tim_kerja_id,
-            'email' => $request->nip.'@bkk.go.id', // Contoh email otomatis pakai NIP
-            'password' => bcrypt('password123'),        // Password default
+            'pangkat_golongan' => $request->pangkat_golongan,
+            'jabatan' => $request->jabatan,
+            'kelas_jabatan' => $request->kelas_jabatan,
+            'pendidikan' => $request->pendidikan,
+            'email' => $request->nip.'@bkk.go.id',
+            'password' => bcrypt('password123'), // Password default
         ]);
 
-        return redirect()->route('admin.pegawai.index')->with('success', 'Pegawai berhasil ditambahkan!');
+        // 3. Redirect dengan pesan sukses yang lebih informatif
+        return redirect()->route('admin.pegawai.index')
+            ->with('success', 'Pegawai '.$request->name.' berhasil ditambahkan!');
     }
 
     // Menampilkan halaman edit pegawai
@@ -60,24 +71,34 @@ class PegawaiController extends Controller
     }
 
     // Memproses pembaruan data di database
-    // Memproses pembaruan data di database
     public function update(Request $request, $id)
     {
         $pegawai = User::findOrFail($id);
 
+        // 1. Validasi Input (Menambahkan kolom kepegawaian baru)
         $request->validate([
             'nip' => 'required|unique:users,nip,'.$id,
-            'name' => 'required',
+            'name' => 'required|string|max:255',
             'tim_kerja_id' => 'required|exists:tim_kerja,id', // Validasi tim baru
+            'pangkat_golongan' => 'nullable|string|max:255',
+            'jabatan' => 'nullable|string|max:255',
+            'kelas_jabatan' => 'nullable|string|max:255',
+            'pendidikan' => 'nullable|string|max:255',
         ]);
 
+        // 2. Simpan perubahan ke database
         $pegawai->update([
             'nip' => $request->nip,
             'name' => $request->name,
             'tim_kerja_id' => $request->tim_kerja_id, // Simpan perubahan tim
-            'email' => $request->nip.'@bkk.go.id',
+            'pangkat_golongan' => $request->pangkat_golongan,
+            'jabatan' => $request->jabatan,
+            'kelas_jabatan' => $request->kelas_jabatan,
+            'pendidikan' => $request->pendidikan,
+            'email' => $request->nip.'@bkk.go.id', // Sinkronisasi email jika NIP ikut diubah
         ]);
 
+        // 3. Kembali ke halaman index dengan pesan sukses
         return redirect()->route('admin.pegawai.index')->with('success', 'Data pegawai berhasil diperbarui!');
     }
 
@@ -87,5 +108,48 @@ class PegawaiController extends Controller
         User::findOrFail($id)->delete();
 
         return redirect()->back()->with('success', 'Pegawai berhasil dihapus!');
+    }
+
+    public function editBiodata()
+    {
+        $pegawai = auth()->user(); // Ambil data pegawai yang sedang login
+
+        return view('pegawai.edit_biodata', compact('pegawai'));
+    }
+
+    // Memproses pembaruan data dari form biodata pegawai
+    public function updateBiodata(Request $request)
+    {
+        $pegawai = Auth::user();
+
+        // Validasi input
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$pegawai->id,
+            'pangkat_golongan' => 'nullable|string|max:255',
+            'jabatan' => 'nullable|string|max:255',
+            'kelas_jabatan' => 'nullable|string|max:255',
+            'pendidikan' => 'nullable|string|max:255',
+            'password' => 'nullable|string|min:6|confirmed', // 'confirmed' mewajibkan field password_confirmation
+        ]);
+
+        // Data dasar yang diupdate
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'pangkat_golongan' => $request->pangkat_golongan,
+            'jabatan' => $request->jabatan,
+            'kelas_jabatan' => $request->kelas_jabatan,
+            'pendidikan' => $request->pendidikan,
+        ];
+
+        // Jika pegawai mengisi password baru, enkripsi dan masukkan ke database
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $pegawai->update($data);
+
+        return redirect()->back()->with('success', 'Biodata Anda berhasil diperbarui!');
     }
 }

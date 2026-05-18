@@ -139,7 +139,6 @@
                 <div class="position-sticky">
                     <div class="sidebar-brand-container">
                         <div class="logo-wrapper d-flex justify-content-center mb-3">
-                            {{-- Mengganti 2 logo menjadi 1 logo gabungan --}}
                             <img src="{{ asset('logo/kemenkes_bkk.png') }}" alt="Logo Kemenkes BKK Pontianak"
                                 class="logo-img">
                         </div>
@@ -148,78 +147,86 @@
                     </div>
 
                     <ul class="nav flex-column mt-2">
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}"
-                                href="/admin/dashboard">
-                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/tim-kerja*') ? 'active' : '' }}"
-                                href="/admin/tim-kerja">
-                                <i class="bi bi-briefcase me-2"></i> Tim Kerja
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/pegawai*') ? 'active' : '' }}"
-                                href="/admin/pegawai">
-                                <i class="bi bi-people me-2"></i> Data Pegawai
-                            </a>
-                        </li>
 
-                        {{-- MENU KHUSUS SUPER ADMIN --}}
-                        @if (auth()->user()->isSuperAdmin())
+                        {{-- ========================================== --}}
+                        {{-- MENU KHUSUS ADMIN & SUPER ADMIN            --}}
+                        {{-- ========================================== --}}
+                        @if (auth()->user()->role !== 'pegawai')
                             <li class="nav-item">
-                                <a class="nav-link {{ Request::is('admin/manage-admins*') ? 'active' : '' }}"
-                                    href="/admin/manage-admins">
-                                    <i class="bi bi-shield-lock me-2"></i> Kelola Admin
+                                <a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}"
+                                    href="/admin/dashboard">
+                                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/tim-kerja*') ? 'active' : '' }}"
+                                    href="/admin/tim-kerja">
+                                    <i class="bi bi-briefcase me-2"></i> Tim Kerja
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/pegawai*') ? 'active' : '' }}"
+                                    href="/admin/pegawai">
+                                    <i class="bi bi-people me-2"></i> Data Pegawai
+                                </a>
+                            </li>
+
+                            {{-- MENU KHUSUS SUPER ADMIN --}}
+                            @if (auth()->user()->isSuperAdmin())
+                                <li class="nav-item">
+                                    <a class="nav-link {{ Request::is('admin/manage-admins*') ? 'active' : '' }}"
+                                        href="/admin/manage-admins">
+                                        <i class="bi bi-shield-lock me-2"></i> Kelola Admin
+                                    </a>
+                                </li>
+                            @endif
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/absensi/hapus-massal*') ? 'active' : '' }}"
+                                    href="/admin/absensi/hapus-massal">
+                                    <i class="bi bi-trash3 me-2"></i> Hapus Absensi Massal
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
+                                    href="/admin/locations">
+                                    <i class="bi bi-geo-alt me-2"></i> Lokasi
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/laporan*') ? 'active' : '' }}"
+                                    href="/admin/laporan">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}"
+                                    href="{{ route('admin.settings') }}">
+                                    <i class="bi bi-gear me-2"></i> Pengaturan
                                 </a>
                             </li>
                         @endif
 
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/absensi/hapus-massal*') ? 'active' : '' }}"
-                                href="/admin/absensi/hapus-massal">
-                                <i class="bi bi-trash3 me-2"></i> Hapus Absensi Massal
-                            </a>
-                        </li>
+
 
                         <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
-                                href="/admin/locations">
-                                <i class="bi bi-geo-alt me-2"></i> Lokasi
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/laporan*') ? 'active' : '' }}"
-                                href="/admin/laporan">
-                                <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}"
-                                href="{{ route('admin.settings') }}">
-                                <i class="bi bi-gear me-2"></i> Pengaturan
+                            <a class="nav-link {{ Request::is('pegawai/biodata*') ? 'active' : '' }}"
+                                href="/pegawai/biodata">
+                                <i class="bi bi-person-check me-2"></i> Ubah Biodata
                             </a>
                         </li>
 
                         <li class="nav-item mt-2">
-                            {{-- Link Lihat Frontend (Tanpa Logout) --}}
                             <a class="nav-link opacity-75 small" href="{{ route('absen.home') }}" target="_blank">
                                 <i class="bi bi-eye me-2"></i> Lihat Halaman Absen
                             </a>
                         </li>
 
                         <li class="nav-item">
-                            {{-- Tombol Logout Sebenarnya --}}
                             <a class="nav-link text-danger-custom" href="#"
                                 onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <i class="bi bi-power me-2"></i> Logout (Keluar)
                             </a>
-
-                            {{-- Form Tersembunyi untuk Logout --}}
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                 @csrf
                             </form>

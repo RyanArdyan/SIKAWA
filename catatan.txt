@@ -4,3 +4,7 @@ pengingat absen.
 
 
 Bagaimana jika pegawai lupa absen maka admin bisa menambahkan absen masuk dan absen keluar untuk pegawai.
+
+18 Mei 2026:
+1. Biodata pegawai berarti ketika menambah pegawai dan mengedit pegawai
+2. Lalu bikin edit profile, berarti jika pegawai maka hanya bisa melihat edit profile.
