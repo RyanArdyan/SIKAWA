@@ -77,35 +77,52 @@ class WfoAttendanceController extends Controller
             ]);
         }
 
-        // 3. LOGIKA RADIUS (Haversine Formula)
-        // Mencari apakah koordinat user masuk ke salah satu radius kantor di tabel locations
+        // 3. LOGIKA RADIUS (Haversine Formula) - DIKUNCI DI 2000 METER
         $locations = Location::all();
         $currentLocation = null;
+        $radiusMaksimal = 3000; // Mengunci batas radius maksimal menjadi 2000 meter (2 Km)
+
+        $distanceInfo = 0;
+        $terdekat = null;
 
         foreach ($locations as $loc) {
-            $earthRadius = 6371000; // Dalam meter
+            $earthRadius = 6371000; // Satuan Meter
 
-            $dLat = deg2rad($loc->latitude - $userLat);
-            $dLon = deg2rad($loc->longitude - $userLon);
+            // Paksa konversi tipe data ke float agar perhitungan fungsi matematika akurat
+            $officeLat = (float) $loc->latitude;
+            $officeLon = (float) $loc->longitude;
+            $currentUserLat = (float) $userLat;
+            $currentUserLon = (float) $userLon;
+
+            $dLat = deg2rad($officeLat - $currentUserLat);
+            $dLon = deg2rad($officeLon - $currentUserLon);
 
             $a = sin($dLat / 2) * sin($dLat / 2) +
-                 cos(deg2rad($userLat)) * cos(deg2rad($loc->latitude)) *
+                 cos(deg2rad($currentUserLat)) * cos(deg2rad($officeLat)) *
                  sin($dLon / 2) * sin($dLon / 2);
 
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
             $distance = $earthRadius * $c;
 
-            // Jika jarak user <= radius kantor (misal 500m), maka lokasi ditemukan
-            if ($distance <= $loc->radius) {
+            // Simpan data jarak terdekat untuk ditampilkan di pesan error jika gagal
+            if (is_null($terdekat) || $distance < $distanceInfo) {
+                $terdekat = $loc;
+                $distanceInfo = $distance;
+            }
+
+            // Memeriksa jika jarak user masuk dalam radius 2000 meter
+            if ($distance <= $radiusMaksimal) {
                 $currentLocation = $loc;
                 break;
             }
         }
 
         if (! $currentLocation) {
+            $jarakBulat = round($distanceInfo);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Anda berada di luar radius kantor yang diizinkan.',
+                'message' => "Di luar radius! Jarak Anda ke {$terdekat->name} adalah {$jarakBulat}m (Maksimal yang diizinkan: {$radiusMaksimal}m).",
             ]);
         }
 
@@ -140,7 +157,6 @@ class WfoAttendanceController extends Controller
 
         } else {
             // --- LOGIKA ABSEN PULANG ---
-            // Cek jika sudah pernah absen pulang
             if ($attendance->check_out_time) {
                 return response()->json([
                     'success' => false,

@@ -13,4 +13,12 @@ class Location extends Model
     {
         $this->attributes['location_name'] = ucwords(strtolower($value));
     }
+
+    /**
+     * Relasi ke tabel users (1 Location memiliki banyak User)
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class, 'location_id');
+    }
 }

@@ -91,4 +91,12 @@ class User extends Authenticatable
     {
         return $this->role === 'pegawai';
     }
+
+    /**
+     * Relasi ke tabel locations (1 User milik 1 Location)
+     */
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
 }

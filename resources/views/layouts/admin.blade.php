@@ -190,7 +190,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ Request::is('admin/locations*') ? 'active' : '' }}"
                                     href="/admin/locations">
-                                    <i class="bi bi-geo-alt me-2"></i> Lokasi
+                                    <i class="bi bi-geo-alt me-2"></i> Lokasi atau Wilayah Kerja
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -206,8 +206,6 @@
                                 </a>
                             </li>
                         @endif
-
-
 
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('pegawai/biodata*') ? 'active' : '' }}"

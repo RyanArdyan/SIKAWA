@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Location;
 
 class PegawaiController extends Controller
 {
@@ -24,9 +25,10 @@ class PegawaiController extends Controller
     {
         // 1. Ambil semua data tim kerja dari database
         $tim_kerja = TimKerja::orderBy('nama', 'asc')->get();
+        $locations = Location::orderBy('name', 'asc')->get(); // Tambahkan ini untuk lokasi
 
-        // 2. Kirim variabel $tim_kerja ke view menggunakan compact
-        return view('admin.pegawai.create', compact('tim_kerja'));
+        // 2. Kirim variabel $tim_kerja dan $locations ke view menggunakan compact
+        return view('admin.pegawai.create', compact('tim_kerja', 'locations'));
     }
 
     public function store(Request $request)
@@ -36,6 +38,7 @@ class PegawaiController extends Controller
             'nip' => 'required|unique:users,nip',
             'name' => 'required|string|max:255',
             'tim_kerja_id' => 'required|exists:tim_kerja,id',
+            'location_id' => 'required|exists:locations,id',
             'pangkat_golongan' => 'nullable|string|max:255',
             'jabatan' => 'nullable|string|max:255',
             'kelas_jabatan' => 'nullable|string|max:255',
@@ -47,6 +50,7 @@ class PegawaiController extends Controller
             'nip' => $request->nip,
             'name' => $request->name,
             'tim_kerja_id' => $request->tim_kerja_id,
+            'location_id' => $request->location_id, // Simpan lokasi baru
             'pangkat_golongan' => $request->pangkat_golongan,
             'jabatan' => $request->jabatan,
             'kelas_jabatan' => $request->kelas_jabatan,
@@ -67,7 +71,10 @@ class PegawaiController extends Controller
         // Tambahkan ini: Ambil semua tim untuk pilihan dropdown
         $tim_kerja = TimKerja::orderBy('nama', 'asc')->get();
 
-        return view('admin.pegawai.edit', compact('pegawai', 'tim_kerja'));
+        // TAMBAHAN: Mengambil semua data wilayah kerja untuk pilihan dropdown
+        $locations = Location::orderBy('name', 'asc')->get();
+
+        return view('admin.pegawai.edit', compact('pegawai', 'tim_kerja', 'locations'));
     }
 
     // Memproses pembaruan data di database
@@ -80,6 +87,7 @@ class PegawaiController extends Controller
             'nip' => 'required|unique:users,nip,'.$id,
             'name' => 'required|string|max:255',
             'tim_kerja_id' => 'required|exists:tim_kerja,id', // Validasi tim baru
+            'location_id' => 'required|exists:locations,id', // Validasi lokasi baru
             'pangkat_golongan' => 'nullable|string|max:255',
             'jabatan' => 'nullable|string|max:255',
             'kelas_jabatan' => 'nullable|string|max:255',
@@ -91,6 +99,7 @@ class PegawaiController extends Controller
             'nip' => $request->nip,
             'name' => $request->name,
             'tim_kerja_id' => $request->tim_kerja_id, // Simpan perubahan tim
+            'location_id' => $request->location_id, // Simpan perubahan lokasi
             'pangkat_golongan' => $request->pangkat_golongan,
             'jabatan' => $request->jabatan,
             'kelas_jabatan' => $request->kelas_jabatan,
