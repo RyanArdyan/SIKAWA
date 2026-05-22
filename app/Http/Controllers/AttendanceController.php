@@ -91,7 +91,7 @@ class AttendanceController extends Controller
                 ]);
 
             } else {
-                // --- LOGIKA ABSEN PULANG (DENGAN PROTEKSI 8 JAM) ---
+                // --- LOGIKA ABSEN PULANG ---
 
                 // 1. Verifikasi Laporan PDF sudah diunggah
                 if (empty($attendance->laporan_pdf)) {
@@ -101,18 +101,11 @@ class AttendanceController extends Controller
                     ]);
                 }
 
-                // 2. Verifikasi Durasi Kerja Minimal 8 Jam
-                $waktuMasuk = Carbon::parse($attendance->check_in_time);
-                $waktuMinimalPulang = $waktuMasuk->copy()->addHours(8);
+                // --- LOGIKA DURASI 8 JAM TELAH DIHAPUS ---
+                // Validasi waktu minimal pulang ($waktuMinimalPulang) dan response error 403/kondisi lt()
+                // telah dihilangkan agar proses update check-out langsung dieksekusi.
 
-                if (now()->lt($waktuMinimalPulang)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Belum waktunya pulang. Anda baru bisa absen pulang pada pukul '.$waktuMinimalPulang->format('H:i'),
-                    ]);
-                }
-
-                // 3. Update data absen pulang
+                // 2. Update data absen pulang
                 $attendance->update([
                     'check_out_time' => now(),
                     'photo_path_out' => $imagePath,
@@ -149,9 +142,9 @@ class AttendanceController extends Controller
         $status = 'masuk';
         $laporanSudahAda = false;
         $bolehUpload = true;
-        $bolehPulang = true;
+        $bolehPulang = true; // Selalu true agar bisa langsung pulang setelah upload laporan
         $pesanWaktu = '';
-        $pesanPulang = '';
+        $pesanPulang = '';   // Kosong karena fitur "Bisa Pulang JAM xx:xx" sudah dihapus
 
         if ($attendance) {
             if ($attendance->check_out_time) {
@@ -164,22 +157,9 @@ class AttendanceController extends Controller
                 // Cek apakah kolom laporan_pdf di database sudah terisi
                 $laporanSudahAda = ! empty($attendance->laporan_pdf);
 
-                // Gunakan Carbon untuk manipulasi waktu
-                $waktuMasuk = Carbon::parse($attendance->check_in_time);
-
-                // --- LOGIKA DURASI 1 JAM (Syarat Upload Laporan) ---
-                $waktuMinimalUpload = $waktuMasuk->copy()->addHour();
-                if (now()->lt($waktuMinimalUpload)) {
-                    $bolehUpload = false;
-                    $pesanWaktu = 'Laporan harian baru dapat diunggah pukul '.$waktuMinimalUpload->format('H:i');
-                }
-
-                // --- LOGIKA DURASI 8 JAM (Syarat Absen Pulang) ---
-                $waktuMinimalPulang = $waktuMasuk->copy()->addHours(8);
-                if (now()->lt($waktuMinimalPulang)) {
-                    $bolehPulang = false;
-                    $pesanPulang = 'Absen pulang baru tersedia pukul '.$waktuMinimalPulang->format('H:i');
-                }
+                // --- LOGIKA DURASI 1 JAM & 8 JAM TELAH DIHAPUS ---
+                // Tidak ada lagi pengecekan addHours(8) atau now()->lt() di sini.
+                // Pegawai bisa langsung pulang kapan saja begitu laporan_pdf terisi.
             }
         }
 
@@ -190,9 +170,9 @@ class AttendanceController extends Controller
             'status' => $status,
             'laporan_ready' => $laporanSudahAda,
             'boleh_upload' => $bolehUpload,
-            'boleh_pulang' => $bolehPulang,   // Data krusial untuk kunci tombol pulang
-            'pesan_waktu' => $pesanWaktu,     // Info ke pegawai soal jam upload
-            'pesan_pulang' => $pesanPulang,   // Info ke pegawai soal jam pulang
+            'boleh_pulang' => $bolehPulang,   // Bernilai true
+            'pesan_waktu' => $pesanWaktu,
+            'pesan_pulang' => $pesanPulang,   // Bernilai string kosong
             'is_wfo' => false,
         ]);
     }
@@ -218,16 +198,9 @@ class AttendanceController extends Controller
                 ->first();
 
             if ($attendance) {
-                // --- VALIDASI SISI SERVER (Proteksi 1 Jam) ---
-                $waktuMasuk = Carbon::parse($attendance->check_in_time);
-                $waktuMinimalUpload = $waktuMasuk->addHour();
-
-                if (now()->lt($waktuMinimalUpload)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Maaf, laporan baru dapat diunggah pukul '.$waktuMinimalUpload->format('H:i'),
-                    ], 403);
-                }
+                // --- VALIDASI SISI SERVER (Proteksi 1 Jam) HARUS DIHAPUS ---
+                // Bagian pengecekan waktu check_in_time dan throw error 403 telah dihilangkan
+                // agar pegawai bisa langsung upload kapan saja setelah absen masuk.
 
                 // --- LOGIKA PEMBERSIHAN STORAGE ---
                 // Jika sebelumnya sudah pernah upload, hapus file lamanya agar storage tidak penuh

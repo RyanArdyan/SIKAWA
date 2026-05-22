@@ -83,10 +83,10 @@
                         facingMode: "user",
                         width: {
                             ideal: 640
-                        }, // Diubah ke 640
+                        },
                         height: {
                             ideal: 480
-                        } // Diubah ke 480
+                        }
                     }
                 })
                 .then(stream => {
@@ -127,8 +127,8 @@
                                 uploadStatus.innerHTML = "";
 
                             } else if (data.status === 'pulang') {
-                                // KONDISI 1: Sudah Upload Laporan DAN Sudah 8 Jam
-                                if (data.laporan_ready && data.boleh_pulang) {
+                                // KONDISI 1: Jika Laporan Sudah Diunggah -> Langsung Buka Tombol Pulang
+                                if (data.laporan_ready) {
                                     btnCapture.innerHTML =
                                         '<i class="bi bi-box-arrow-right me-2"></i> Ambil Foto & Absen Pulang';
                                     btnCapture.className =
@@ -136,37 +136,15 @@
                                     btnCapture.disabled = false;
                                     containerUpload.classList.add('d-none');
                                     uploadStatus.innerHTML = "";
-
                                 }
-                                // KONDISI 2: Laporan Belum Diupload
-                                else if (!data.laporan_ready) {
+                                // KONDISI 2: Jika Laporan Belum Diunggah -> Kunci Tombol & Tampilkan Form Upload
+                                else {
                                     btnCapture.innerHTML =
                                         '<i class="bi bi-lock-fill me-2"></i> Upload Laporan Dahulu';
                                     btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-secondary";
                                     btnCapture.disabled = true;
                                     containerUpload.classList.remove('d-none');
-
-                                    // Info jika belum 1 jam untuk upload
-                                    uploadStatus.innerHTML = data.boleh_upload ? "" :
-                                        `<span class="text-danger small fw-bold">${data.pesan_waktu}</span>`;
-
-                                }
-                                // KONDISI 3: Laporan Sudah Ada, Tapi Belum 8 Jam (Kunci Tombol & Tampilkan Jam)
-                                else if (!data.boleh_pulang) {
-                                    // Mengambil jam saja dari string "Absen pulang baru tersedia pukul 16:00"
-                                    const jamTersedia = data.pesan_pulang.split('pukul ')[1];
-
-                                    btnCapture.innerHTML =
-                                        `<i class="bi bi-clock-history me-2"></i> BISA PULANG JAM ${jamTersedia}`;
-                                    btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-danger fw-bold";
-                                    btnCapture.disabled = true;
-                                    containerUpload.classList.add('d-none');
-
-                                    uploadStatus.innerHTML = `
-                                    <div class="alert alert-info py-2 mt-3 small shadow-sm animate__animated animate__fadeIn">
-                                        <i class="bi bi-info-circle-fill"></i>
-                                        Sesuai aturan WFA, Anda baru dapat absen pulang setelah 8 jam kerja.
-                                    </div>`;
+                                    uploadStatus.innerHTML = "";
                                 }
 
                             } else {
@@ -207,7 +185,6 @@
             };
 
             navigator.geolocation.getCurrentPosition((position) => {
-                // --- PROSES KOMPRESI & RESIZE ---
                 const targetWidth = 640;
                 const targetHeight = 480;
 
@@ -215,11 +192,8 @@
                 canvas.height = targetHeight;
 
                 const ctx = canvas.getContext('2d');
-
-                // Menggambar video ke canvas dengan ukuran target (Resize)
                 ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
 
-                // Kompresi kualitas ke 0.7 (70%) untuk memperkecil ukuran file base64
                 const dataURI = canvas.toDataURL('image/jpeg', 0.7);
 
                 fetch('{{ route('absen.store') }}', {

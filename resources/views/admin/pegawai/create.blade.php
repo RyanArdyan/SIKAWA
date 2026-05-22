@@ -48,6 +48,32 @@
                             @enderror
                         </div>
 
+                        {{-- Input Gender --}}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-body-secondary">Gender</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                    <i class="bi bi-geo-alt text-body-secondary"></i>
+                                </span>
+                                <select name="gender"
+                                    class="form-select bg-body border-secondary-subtle text-body border-start-0 @error('gender') is-invalid @enderror"
+                                    required>
+                                    <option value="" disabled selected class="text-body">-- Pilih Gender --</option>
+                                    <option value="Laki-laki" class="text-body"
+                                        {{ old('gender') == 'Laki-laki' ? 'selected' : '' }}>
+                                        Laki-laki
+                                    </option>
+                                    <option value="Perempuan" class="text-body"
+                                        {{ old('gender') == 'Perempuan' ? 'selected' : '' }}>
+                                        Perempuan
+                                    </option>
+                                </select>
+                            </div>
+                            @error('gender')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         {{-- Input Penempatan Tim Kerja --}}
                         <div class="mb-4">
                             <label class="form-label fw-bold text-body-secondary">Penempatan Tim Kerja</label>

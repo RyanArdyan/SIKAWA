@@ -39,6 +39,7 @@ class PegawaiController extends Controller
             'name' => 'required|string|max:255',
             'tim_kerja_id' => 'required|exists:tim_kerja,id',
             'location_id' => 'required|exists:locations,id',
+            'gender' => 'required|in:Laki-laki,Perempuan',
             'pangkat_golongan' => 'nullable|string|max:255',
             'jabatan' => 'nullable|string|max:255',
             'kelas_jabatan' => 'nullable|string|max:255',
@@ -51,6 +52,7 @@ class PegawaiController extends Controller
             'name' => $request->name,
             'tim_kerja_id' => $request->tim_kerja_id,
             'location_id' => $request->location_id, // Simpan lokasi baru
+            'gender' => $request->gender, // Simpan gender baru
             'pangkat_golongan' => $request->pangkat_golongan,
             'jabatan' => $request->jabatan,
             'kelas_jabatan' => $request->kelas_jabatan,
