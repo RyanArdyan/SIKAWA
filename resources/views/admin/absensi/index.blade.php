@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('header', 'Laporan Absensi Pegawai sfsgfds')
+@section('header', 'Laporan Absensi Pegawai')
 
 @section('content')
     {{-- Form Filter --}}

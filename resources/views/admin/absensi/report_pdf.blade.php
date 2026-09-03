@@ -118,7 +118,6 @@
             <td style="border: none;"><strong>Tipe Absen</strong></td>
             <td style="border: none;">: {{ strtoupper($tipe_filter ?? 'Semua') }}</td>
         </tr>
-        {{-- TAMBAHAN BARIS LOKASI --}}
         <tr style="border: none !important;">
             <td style="border: none;"></td>
             <td style="border: none;"></td>
@@ -132,24 +131,56 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 30px;">No</th>
-                <th style="width: 80px;">Tanggal</th>
+                <th style="width: 25px;">No</th>
+                <th style="width: 65px;">Hari</th> {{-- Kolom Hari --}}
+                <th style="width: 75px;">Tanggal</th>
                 <th>Nama Pegawai</th>
-                <th style="width: 100px;">NIP</th>
-                <th style="width: 90px;">Tipe</th> {{-- Lebar ditambah untuk panah transisi --}}
-                <th style="width: 60px;">Jam Masuk</th>
-                <th style="width: 60px;">Jam Pulang</th>
-                <th style="width: 80px;">Status</th>
-                <th>Alasan Perubahan</th> {{-- Kolom Baru --}}
+                <th style="width: 90px;">NIP</th>
+                <th style="width: 80px;">Tipe</th>
+                <th style="width: 55px;">Jam Masuk</th>
+                <th style="width: 55px;">Jam Pulang</th>
+                <th style="width: 70px;">Jam Kerja</th> {{-- Kolom Jam Kerja / Durasi --}}
+                <th>Keterangan</th>
             </tr>
         </thead>
         <tbody>
             @forelse($attendances as $index => $a)
+                @php
+                    // Set lokal Carbon ke Bahasa Indonesia
+                    \Carbon\Carbon::setLocale('id');
+
+                    $checkIn = $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time) : null;
+                    $checkOut = $a->check_out_time ? \Carbon\Carbon::parse($a->check_out_time) : null;
+
+                    // Kalkulasi Durasi Jam Kerja
+                    $durasiKerja = '-';
+                    if ($checkIn && $checkOut) {
+                        $diffInMinutes = $checkIn->diffInMinutes($checkOut);
+                        $jam = floor($diffInMinutes / 60);
+                        $menit = $diffInMinutes % 60;
+
+                        if ($jam > 0 && $menit > 0) {
+                            $durasiKerja = "{$jam} jam {$menit} mnt";
+                        } elseif ($jam > 0) {
+                            $durasiKerja = "{$jam} jam";
+                        } else {
+                            $durasiKerja = "{$menit} mnt";
+                        }
+                    }
+                @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
+
+                    {{-- Kolom Hari --}}
                     <td class="text-center">
-                        {{ $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time)->translatedFormat('d/m/Y') : '-' }}
+                        {{ $checkIn ? $checkIn->isoFormat('dddd') : '-' }}
                     </td>
+
+                    {{-- Kolom Tanggal --}}
+                    <td class="text-center">
+                        {{ $checkIn ? $checkIn->format('d/m/Y') : '-' }}
+                    </td>
+
                     <td>{{ $a->user->name ?? 'User Terhapus' }}</td>
                     <td class="text-center">{{ $a->user->nip ?? '-' }}</td>
 
@@ -166,15 +197,15 @@
                     </td>
 
                     <td class="text-center">
-                        {{ $a->check_in_time ? \Carbon\Carbon::parse($a->check_in_time)->format('H:i') : '-' }}
+                        {{ $checkIn ? $checkIn->format('H:i') : '-' }}
                     </td>
                     <td class="text-center">
-                        {{ $a->check_out_time ? \Carbon\Carbon::parse($a->check_out_time)->format('H:i') : '-' }}
+                        {{ $checkOut ? $checkOut->format('H:i') : '-' }}
                     </td>
+
+                    {{-- Kolom Durasi Jam Kerja --}}
                     <td class="text-center">
-                        <span class="{{ $a->status == 'terlambat' ? 'status-terlambat' : 'status-hadir' }}">
-                            {{ strtoupper($a->status) }}
-                        </span>
+                        {{ $durasiKerja }}
                     </td>
 
                     {{-- Menampilkan Alasan Perubahan --}}
@@ -184,7 +215,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 20px;">
+                    <td colspan="11" class="text-center" style="padding: 20px;">
                         Tidak ada data absensi untuk periode ini.
                     </td>
                 </tr>
