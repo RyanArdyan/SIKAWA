@@ -25,9 +25,14 @@ class LocationController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'radius' => 'required|integer',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'radius' => 'required|integer|min:1',
+        ], [
+            'latitude.between' => 'Latitude harus berada di antara rentang -90 hingga 90.',
+            'longitude.between' => 'Longitude harus berada di antara rentang -180 hingga 180.',
+            'latitude.numeric' => 'Format Latitude harus berupa angka.',
+            'longitude.numeric' => 'Format Longitude harus berupa angka.',
         ]);
 
         Location::create($request->all());
@@ -56,15 +61,21 @@ class LocationController extends Controller
         // 1. Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
             'radius' => 'required|integer|min:1',
         ], [
-            // Custom pesan error (opsional)
+            // Custom pesan error
             'name.required' => 'Nama lokasi harus diisi.',
+            'latitude.required' => 'Latitude harus diisi.',
             'latitude.numeric' => 'Format latitude harus berupa angka desimal.',
+            'latitude.between' => 'Latitude harus berada di antara rentang -90 hingga 90.',
+            'longitude.required' => 'Longitude harus diisi.',
             'longitude.numeric' => 'Format longitude harus berupa angka desimal.',
+            'longitude.between' => 'Longitude harus berada di antara rentang -180 hingga 180.',
+            'radius.required' => 'Radius harus diisi.',
             'radius.integer' => 'Radius harus berupa angka bulat dalam satuan meter.',
+            'radius.min' => 'Radius minimal bernilai 1 meter.',
         ]);
 
         // 2. Update data ke database
