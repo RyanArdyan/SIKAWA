@@ -70,6 +70,13 @@
                         value="{{ $end_date }}">
                 </div>
 
+                {{-- INPUT BARU: Tanggal Cetak --}}
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-body-secondary">Tanggal Cetak</label>
+                    <input type="date" name="print_date" class="form-control bg-body border-secondary-subtle text-body"
+                        value="{{ $print_date ?? date('Y-m-d') }}">
+                </div>
+
                 {{-- Ubah dari col-md-2 menjadi col-md-3 agar tidak terlalu sempit --}}
                 <div class="col-md-3 d-flex align-items-end gap-2">
                     {{-- Tombol Filter --}}
@@ -235,7 +242,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-body-secondary py-5">
+                                <td colspan="8" class="text-center text-body-secondary py-5">
                                     <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
                                     Tidak ada data absensi yang ditemukan.
                                 </td>
@@ -299,6 +306,7 @@
                     // Ambil nilai dari setiap input filter
                     let startDate = filterForm.querySelector('input[name="start_date"]').value;
                     let endDate = filterForm.querySelector('input[name="end_date"]').value;
+                    let printDate = filterForm.querySelector('input[name="print_date"]').value;
                     const nip = filterForm.querySelector('[name="nip"]').value;
                     const timKerja = filterForm.querySelector('[name="tim_kerja_id"]').value;
                     const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]').value;
@@ -311,6 +319,7 @@
                     let params = new URLSearchParams({
                         start_date: startDate,
                         end_date: endDate,
+                        print_date: printDate,
                         nip: nip,
                         tim_kerja_id: timKerja,
                         tipe_absen: tipeAbsen,

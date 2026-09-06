@@ -428,6 +428,7 @@ class AttendanceController extends Controller
         $timKerjaId = $request->query('tim_kerja_id');
         $start_raw = $request->query('start_date');
         $end_raw = $request->query('end_date');
+        $print_raw = $request->query('print_date');
         $tipe_absen = $request->query('tipe_absen');
         $locationId = $request->query('location_id');
 
@@ -444,6 +445,20 @@ class AttendanceController extends Controller
                 // Fallback jika format datang dalam d/m/Y
                 $start_date = Carbon::createFromFormat('d/m/Y', $start_raw)->format('Y-m-d');
                 $end_date = Carbon::createFromFormat('d/m/Y', $end_raw)->format('Y-m-d');
+            }
+        }
+
+        // <-- TAMBAHAN 2: Normalisasi Format Tanggal Cetak
+        $tanggal_cetak = Carbon::now()->translatedFormat('d F Y'); // Default jika input kosong
+        if ($print_raw) {
+            try {
+                $tanggal_cetak = Carbon::parse($print_raw)->translatedFormat('d F Y');
+            } catch (\Exception $e) {
+                try {
+                    $tanggal_cetak = Carbon::createFromFormat('d/m/Y', $print_raw)->translatedFormat('d F Y');
+                } catch (\Exception $ex) {
+                    // Biarkan tetap default Carbon::now() jika terjadi error parse
+                }
             }
         }
 
@@ -508,7 +523,7 @@ class AttendanceController extends Controller
             'user' => $userSelected,
             'start_date' => $start_date ? Carbon::parse($start_date)->format('d/m/Y') : null,
             'end_date' => $end_date ? Carbon::parse($end_date)->format('d/m/Y') : null,
-            'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
+            'tanggal_cetak' => $tanggal_cetak,
             'tim_filter' => $timObj ? $timObj->nama : 'Semua Tim',
             'tipe_filter' => strtoupper($tipe_absen ?? 'Semua'),
             'lokasi_filter' => $locObj ? $locObj->name : 'Semua Lokasi',
