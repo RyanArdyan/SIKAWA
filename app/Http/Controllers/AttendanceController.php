@@ -292,15 +292,22 @@ class AttendanceController extends Controller
     {
         // 1. Ambil semua parameter filter dari URL
         $nip = $request->query('nip');
-        $timKerjaId = $request->query('tim_kerja_id');
-        $tipeAbsen = $request->query('tipe_absen');
-        $locationId = $request->query('location_id'); // Parameter baru untuk filter lokasi
 
-        // 2. Set default rentang tanggal: Awal bulan ini sampai hari ini
+        // GANTI: Ambil sebagai array (bisa multiple ID)
+        $timKerjaIds = $request->query('tim_kerja_ids', []);
+        // Jika masih ada sisa link lama / single input:
+        if ($request->filled('tim_kerja_id') && empty($timKerjaIds)) {
+            $timKerjaIds = [$request->query('tim_kerja_id')];
+        }
+
+        $tipeAbsen = $request->query('tipe_absen');
+        $locationId = $request->query('location_id');
+
+        // 2. Set default rentang tanggal
         $start_date = $request->query('start_date', \Illuminate\Support\Carbon::now()->startOfMonth()->toDateString());
         $end_date = $request->query('end_date', \Illuminate\Support\Carbon::now()->toDateString());
 
-        // 3. Inisialisasi Query dengan Eager Loading (Memuat relasi user, tim_kerja, dan location)
+        // 3. Inisialisasi Query dengan Eager Loading
         $query = Attendance::with(['user.tim_kerja', 'location']);
 
         // 4. Filter NIP atau Nama Pegawai
@@ -314,10 +321,10 @@ class AttendanceController extends Controller
             });
         }
 
-        // 5. Filter Tim Kerja
-        if ($timKerjaId && $timKerjaId !== 'semua') {
-            $query->whereHas('user', function ($q) use ($timKerjaId) {
-                $q->where('tim_kerja_id', $timKerjaId);
+        // 5. PERBAIKAN: Filter Multiple Tim Kerja (Gunakan whereIn)
+        if (! empty($timKerjaIds) && ! in_array('semua', $timKerjaIds)) {
+            $query->whereHas('user', function ($q) use ($timKerjaIds) {
+                $q->whereIn('tim_kerja_id', $timKerjaIds);
             });
         }
 
@@ -326,12 +333,12 @@ class AttendanceController extends Controller
             $query->where('tipe_absen', $tipeAbsen);
         }
 
-        // 7. TAMBAHKAN: Filter Lokasi Kantor
+        // 7. Filter Lokasi Kantor
         if ($locationId && $locationId !== 'semua') {
             $query->where('location_id', $locationId);
         }
 
-        // 8. Filter Rentang Tanggal menggunakan created_at
+        // 8. Filter Rentang Tanggal
         if ($start_date && $end_date) {
             $query->whereBetween('created_at', [
                 \Illuminate\Support\Carbon::parse($start_date)->startOfDay(),
@@ -339,24 +346,22 @@ class AttendanceController extends Controller
             ]);
         }
 
-        // 9. Ambil data terbaru
+        // 9. Ambil data
         $attendances = $query->latest()->get();
 
-        // 10. Ambil data pendukung untuk dropdown di View
+        // 10. Ambil data pendukung
         $timKerjas = TimKerja::all();
-        $locations = Location::all(); // Mengambil daftar kantor (Induk, Dwikora, dll)
-
-        // Ambil jam masuk dari tabel settings
+        $locations = Location::all();
         $jamMasuk = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
 
-        // 11. Kirim semua variabel ke view
+        // 11. Kirim variabel ke view
         return view('admin.absensi.index', compact(
             'attendances',
             'timKerjas',
             'locations',
             'jamMasuk',
             'nip',
-            'timKerjaId',
+            'timKerjaIds', // Kirim sebagai array timKerjaIds
             'start_date',
             'end_date',
             'tipeAbsen',
@@ -425,20 +430,28 @@ class AttendanceController extends Controller
     {
         // 1. Ambil semua parameter filter dari request
         $nip = $request->query('nip');
-        $timKerjaId = $request->query('tim_kerja_id');
+
+        // PERBAIKAN: Ambil tim_kerja_ids sebagai array
+        $timKerjaIds = $request->query('tim_kerja_ids', []);
+
+        // Backward compatibility jika ada request tunggal 'tim_kerja_id'
+        if ($request->filled('tim_kerja_id') && empty($timKerjaIds)) {
+            $timKerjaIds = [$request->query('tim_kerja_id')];
+        }
+
         $start_raw = $request->query('start_date');
         $end_raw = $request->query('end_date');
         $print_raw = $request->query('print_date');
         $tipe_absen = $request->query('tipe_absen');
         $locationId = $request->query('location_id');
 
-        // 2. Normalisasi Format Tanggal
+        // 2. Normalisasi Format Tanggal Rentang Absensi
         $start_date = null;
         $end_date = null;
 
         if ($start_raw && $end_raw) {
             try {
-                // Mencoba parse format Y-m-d (standar input date HTML5)
+                // Standar input date HTML5 (Y-m-d)
                 $start_date = Carbon::parse($start_raw)->format('Y-m-d');
                 $end_date = Carbon::parse($end_raw)->format('Y-m-d');
             } catch (\Exception $e) {
@@ -448,8 +461,8 @@ class AttendanceController extends Controller
             }
         }
 
-        // <-- TAMBAHAN 2: Normalisasi Format Tanggal Cetak
-        $tanggal_cetak = Carbon::now()->translatedFormat('d F Y'); // Default jika input kosong
+        // Normalisasi Format Tanggal Cetak
+        $tanggal_cetak = Carbon::now()->translatedFormat('d F Y'); // Default
         if ($print_raw) {
             try {
                 $tanggal_cetak = Carbon::parse($print_raw)->translatedFormat('d F Y');
@@ -457,12 +470,12 @@ class AttendanceController extends Controller
                 try {
                     $tanggal_cetak = Carbon::createFromFormat('d/m/Y', $print_raw)->translatedFormat('d F Y');
                 } catch (\Exception $ex) {
-                    // Biarkan tetap default Carbon::now() jika terjadi error parse
+                    // Biarkan tetap default jika gagal parse
                 }
             }
         }
 
-        // 3. Ambil data user secara spesifik untuk header PDF
+        // 3. Ambil data user secara spesifik untuk header PDF (jika filter pegawai diisi)
         $userSelected = null;
         if ($nip) {
             $userSelected = User::where(function ($q) use ($nip) {
@@ -488,10 +501,10 @@ class AttendanceController extends Controller
             });
         }
 
-        // 6. Filter berdasarkan Tim Kerja
-        if ($timKerjaId && $timKerjaId !== 'semua') {
-            $query->whereHas('user', function ($q) use ($timKerjaId) {
-                $q->where('tim_kerja_id', $timKerjaId);
+        // 6. PERBAIKAN: Filter berdasarkan Banyak Tim Kerja (whereIn)
+        if (! empty($timKerjaIds) && ! in_array('semua', $timKerjaIds)) {
+            $query->whereHas('user', function ($q) use ($timKerjaIds) {
+                $q->whereIn('tim_kerja_id', $timKerjaIds);
             });
         }
 
@@ -500,12 +513,12 @@ class AttendanceController extends Controller
             $query->where('tipe_absen', $tipe_absen);
         }
 
-        // 8. Filter berdasarkan Lokasi Kantor (Kunci perbaikan Screenshot 2026-05-12 123726.png)
+        // 8. Filter berdasarkan Lokasi Kantor
         if ($locationId && $locationId !== 'semua') {
             $query->where('location_id', $locationId);
         }
 
-        // 9. Filter berdasarkan Rentang Tanggal (Konsisten dengan check_in_time)
+        // 9. Filter berdasarkan Rentang Tanggal
         if ($start_date && $end_date) {
             $query->whereDate('check_in_time', '>=', $start_date)
                 ->whereDate('check_in_time', '<=', $end_date);
@@ -514,8 +527,16 @@ class AttendanceController extends Controller
         // 10. Ambil data hasil filter dengan urutan waktu masuk
         $attendances = $query->orderBy('check_in_time', 'asc')->get();
 
-        // 11. Siapkan data pendukung untuk header laporan agar tidak error saat find()
-        $timObj = ($timKerjaId && $timKerjaId !== 'semua') ? TimKerja::find($timKerjaId) : null;
+        // 11. PERBAIKAN: Format teks tim kerja untuk header PDF
+        $timFilterText = 'Semua Tim';
+        if (! empty($timKerjaIds) && ! in_array('semua', $timKerjaIds)) {
+            // Ambil semua nama tim yang dipilih dan gabungkan dengan koma
+            $namaTimArray = TimKerja::whereIn('id', $timKerjaIds)->pluck('nama')->toArray();
+            if (! empty($namaTimArray)) {
+                $timFilterText = implode(', ', $namaTimArray);
+            }
+        }
+
         $locObj = ($locationId && $locationId !== 'semua') ? Location::find($locationId) : null;
 
         $data = [
@@ -524,16 +545,16 @@ class AttendanceController extends Controller
             'start_date' => $start_date ? Carbon::parse($start_date)->format('d/m/Y') : null,
             'end_date' => $end_date ? Carbon::parse($end_date)->format('d/m/Y') : null,
             'tanggal_cetak' => $tanggal_cetak,
-            'tim_filter' => $timObj ? $timObj->nama : 'Semua Tim',
+            'tim_filter' => $timFilterText, // Hasil gabungan nama tim
             'tipe_filter' => strtoupper($tipe_absen ?? 'Semua'),
             'lokasi_filter' => $locObj ? $locObj->name : 'Semua Lokasi',
         ];
 
-        // 12. Generate PDF (Landscape agar kolom muat)
+        // 12. Generate PDF
         $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
             ->setPaper('a4', 'landscape');
 
-        // 13. Download dengan nama file unik
+        // 13. Stream/Download
         return $pdf->download('Laporan_Absensi_SIKAWA_'.date('Ymd_His').'.pdf');
     }
 

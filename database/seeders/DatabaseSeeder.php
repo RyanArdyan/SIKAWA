@@ -142,6 +142,10 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        $this->call([
+            AttendanceSeeder::class,
+        ]);
+
         $this->command->info('Seeding selesai! Data User dan Tipe Absen (WFO/WFA) sekarang seimbang.');
     }
 }

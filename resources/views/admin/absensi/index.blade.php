@@ -2,6 +2,28 @@
 
 @section('header', 'Laporan Absensi Pegawai')
 
+@push('styles')
+    {{-- CSS Select2 untuk tampilan multiple select yang rapi --}}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Penyesuaian tema Select2 agar cocok dengan Bootstrap 5 Dark Mode */
+        .select2-container--default .select2-selection--multiple {
+            background-color: var(--bs-body-bg, #212529) !important;
+            border-color: var(--bs-border-color, #495057) !important;
+            min-height: 38px;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #40BF89 !important;
+            border: none !important;
+            color: #fff !important;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #fff !important;
+            margin-right: 5px;
+        }
+    </style>
+@endpush
+
 @section('content')
     {{-- Form Filter --}}
     <div class="card border-0 shadow-sm mb-4 bg-body-tertiary">
@@ -20,20 +42,19 @@
                     </div>
                 </div>
 
-                {{-- Filter Tim Kerja --}}
-                <div class="col-md-2">
-                    <label class="form-label fw-bold text-body-secondary">Tim Kerja</label>
-                    <select name="tim_kerja_id" class="form-select bg-body border-secondary-subtle text-body">
-                        <option value="">-- Semua Tim --</option>
+                {{-- Filter Tim Kerja (Multiple Selection) --}}
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-body-secondary">Tim Kerja (Bisa Pilih Banyak)</label>
+                    <select name="tim_kerja_ids[]" id="select-tim-kerja" class="form-select bg-body border-secondary-subtle text-body" multiple>
                         @foreach ($timKerjas as $tim)
-                            <option value="{{ $tim->id }}" {{ ($timKerjaId ?? '') == $tim->id ? 'selected' : '' }}>
+                            <option value="{{ $tim->id }}" {{ in_array($tim->id, (array) ($timKerjaIds ?? [])) ? 'selected' : '' }}>
                                 {{ $tim->nama }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                {{-- FILTER BARU: Tipe Absen --}}
+                {{-- FILTER: Tipe Absen --}}
                 <div class="col-md-2">
                     <label class="form-label fw-bold text-body-secondary">Tipe Absen</label>
                     <select name="tipe_absen" class="form-select bg-body border-secondary-subtle text-body">
@@ -43,7 +64,7 @@
                     </select>
                 </div>
 
-                {{-- FILTER BARU: Lokasi Kantor --}}
+                {{-- FILTER: Lokasi Kantor --}}
                 <div class="col-md-2">
                     <label class="form-label fw-bold text-body-secondary">Lokasi Kantor</label>
                     <select name="location_id" class="form-select bg-body border-secondary-subtle text-body">
@@ -70,7 +91,7 @@
                         value="{{ $end_date }}">
                 </div>
 
-                {{-- INPUT BARU: Tanggal Cetak --}}
+                {{-- INPUT: Tanggal Cetak --}}
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Tanggal Cetak</label>
                     <input type="date" name="print_date" class="form-control bg-body border-secondary-subtle text-body"
@@ -275,7 +296,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Alasan Perubahan</label>
-                            <textarea id="edit_reason" name="reason_change_status" class="form-textarea w-100" rows="3"
+                            <textarea id="edit_reason" name="reason_change_status" class="form-control w-100" rows="3"
                                 placeholder="Contoh: Kesalahan sistem saat pemilihan lokasi" required minlength="5"></textarea>
                             <small class="text-muted">Wajib diisi sebagai log audit.</small>
                         </div>
@@ -291,8 +312,21 @@
 @endsection
 
 @push('scripts')
+    {{-- CDN jQuery & Select2 JS --}}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(document).ready(function() {
+            // Inisialisasi Select2 untuk dropdown Tim Kerja (Multi-Select)
+            if ($('#select-tim-kerja').length) {
+                $('#select-tim-kerja').select2({
+                    placeholder: "-- Pilih Tim Kerja --",
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+
             // Handle Klik Tombol Export PDF
             const btnExportPdf = document.getElementById('btn-export-pdf');
 
@@ -300,50 +334,47 @@
                 btnExportPdf.addEventListener('click', function(e) {
                     e.preventDefault();
 
-                    // Ambil referensi form filter
                     const filterForm = document.getElementById('form-filter-laporan');
 
-                    // Ambil nilai dari setiap input filter
-                    let startDate = filterForm.querySelector('input[name="start_date"]').value;
-                    let endDate = filterForm.querySelector('input[name="end_date"]').value;
-                    let printDate = filterForm.querySelector('input[name="print_date"]').value;
-                    const nip = filterForm.querySelector('[name="nip"]').value;
-                    const timKerja = filterForm.querySelector('[name="tim_kerja_id"]').value;
-                    const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]').value;
-                    const locationId = filterForm.querySelector('[name="location_id"]').value;
+                    // Ambil nilai filter standar
+                    let startDate = filterForm.querySelector('input[name="start_date"]')?.value || '';
+                    let endDate = filterForm.querySelector('input[name="end_date"]')?.value || '';
+                    let printDate = filterForm.querySelector('input[name="print_date"]')?.value || '';
+                    const nip = filterForm.querySelector('[name="nip"]')?.value || '';
+                    const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]')?.value || '';
+                    const locationId = filterForm.querySelector('[name="location_id"]')?.value || '';
 
-                    // Susun URL tujuan (Route Laravel)
-                    let url = "{{ route('admin.absensi.exportReportPdf') }}";
-
-                    // Masukkan parameter filter ke dalam URL Search Params
+                    // Inisialisasi URLSearchParams dengan parameter non-array
                     let params = new URLSearchParams({
                         start_date: startDate,
                         end_date: endDate,
                         print_date: printDate,
                         nip: nip,
-                        tim_kerja_id: timKerja,
                         tipe_absen: tipeAbsen,
                         location_id: locationId
                     });
 
-                    // Eksekusi perpindahan halaman untuk memicu download file
+                    // Ambil array ID tim kerja dari Select2
+                    const selectedTeams = $('#select-tim-kerja').val();
+                    if (selectedTeams && selectedTeams.length > 0) {
+                        selectedTeams.forEach(id => {
+                            params.append('tim_kerja_ids[]', id);
+                        });
+                    }
+
+                    // Direct browser ke URL export PDF beserta Query String
+                    let url = "{{ route('admin.absensi.exportReportPdf') }}";
                     window.location.href = url + '?' + params.toString();
                 });
             }
         });
 
-        // Tambahkan parameter 'reason' di sini -------------------- v
+        // Function Modal Edit Status
         function openEditModal(url, currentType, reason) {
-            // Set Action URL Form
             document.getElementById('formEditStatus').action = url;
-
-            // Set Nilai Default Dropdown
             document.getElementById('edit_tipe_absen').value = currentType;
-
-            // Sekarang variabel 'reason' sudah dikenali karena sudah jadi parameter
             document.getElementById('edit_reason').value = reason || '';
 
-            // Tampilkan Modal
             var myModal = new bootstrap.Modal(document.getElementById('modalEditStatus'));
             myModal.show();
         }

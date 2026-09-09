@@ -118,6 +118,8 @@
         }
     </style>
 
+    @stack('styles')
+
     <script>
         // Mencegah flicker warna putih saat reload
         (function() {
