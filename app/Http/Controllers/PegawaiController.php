@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Location;
 use App\Models\TimKerja;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Location;
 
 class PegawaiController extends Controller
 {
@@ -162,5 +162,21 @@ class PegawaiController extends Controller
         $pegawai->update($data);
 
         return redirect()->back()->with('success', 'Biodata Anda berhasil diperbarui!');
+    }
+
+    // Reset password pegawai menjadi password default
+    public function resetPassword($id)
+    {
+        $pegawai = User::findOrFail($id);
+
+        // Reset password ke default 'password123'
+        $pegawai->update([
+            'password' => Hash::make('password123'),
+        ]);
+
+        return redirect()->back()->with(
+            'success',
+            'Password pegawai '.$pegawai->name.' berhasil di-reset menjadi default (password123).'
+        );
     }
 }

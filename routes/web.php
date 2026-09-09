@@ -76,6 +76,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // CRUD Pegawai, Tim Kerja, & kantor
     Route::resource('pegawai', PegawaiController::class);
+    // Route untuk Reset Password Pegawai oleh Admin
+    Route::put('/pegawai/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('pegawai.resetPassword');
     Route::resource('tim-kerja', TimKerjaController::class);
     Route::resource('locations', LocationController::class);
     Route::resource('kantor', KantorController::class);

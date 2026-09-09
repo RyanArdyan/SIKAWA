@@ -20,7 +20,6 @@
 
         <div class="table-responsive">
             <table class="table table-hover align-middle">
-                {{-- Menghapus table-light agar header tabel adaptif --}}
                 <thead>
                     <tr>
                         <th class="py-3 text-body-secondary">No</th>
@@ -41,10 +40,21 @@
                         <td class="fw-medium text-body">{{ $p->name }}</td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-2">
+                                {{-- Tombol Reset Password --}}
+                                <form action="{{ route('admin.pegawai.resetPassword', $p->id) }}" method="POST" onsubmit="return confirm('Yakin ingin mereset password pegawai {{ $p->name }} menjadi default (password123)?')">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="btn btn-sm btn-outline-info px-3 fw-medium" title="Reset Password ke default">
+                                        <i class="bi bi-key"></i> Reset PW
+                                    </button>
+                                </form>
+
+                                {{-- Tombol Edit --}}
                                 <a href="{{ route('admin.pegawai.edit', $p->id) }}" class="btn btn-sm btn-outline-warning px-3 fw-medium">
                                     <i class="bi bi-pencil-square"></i> Edit
                                 </a>
 
+                                {{-- Tombol Hapus --}}
                                 <form action="{{ route('admin.pegawai.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus pegawai ini?')">
                                     @csrf
                                     @method('DELETE')
