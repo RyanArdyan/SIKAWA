@@ -149,12 +149,15 @@
                         value="{{ $end_date }}">
                 </div>
 
-                {{-- INPUT: Tanggal Cetak --}}
-                <div class="col-md-3">
-                    <label class="form-label fw-bold text-body-secondary">Tanggal Cetak</label>
-                    <input type="date" name="print_date" class="form-control bg-body border-secondary-subtle text-body"
-                        value="{{ $print_date ?? date('Y-m-d') }}">
-                </div>
+                {{-- INPUT: Tanggal Cetak (Hanya untuk Super Admin) --}}
+                @if (auth()->check() && auth()->user()->role === 'super_admin')
+                    {{-- INPUT: Tanggal Cetak --}}
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-body-secondary">Tanggal Cetak</label>
+                        <input type="date" name="print_date" class="form-control bg-body border-secondary-subtle text-body"
+                            value="{{ $print_date ?? date('Y-m-d') }}">
+                    </div>
+                @endif
 
                 <div class="col-md-3 d-flex align-items-end gap-2">
                     {{-- Tombol Filter --}}
