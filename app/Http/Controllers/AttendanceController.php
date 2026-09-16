@@ -539,13 +539,14 @@ class AttendanceController extends Controller
 
         $locObj = ($locationId && $locationId !== 'semua') ? Location::find($locationId) : null;
 
+        // SESUDAH (Perbaikan)
         $data = [
             'attendances' => $attendances,
             'user' => $userSelected,
-            'start_date' => $start_date ? Carbon::parse($start_date)->format('d/m/Y') : null,
-            'end_date' => $end_date ? Carbon::parse($end_date)->format('d/m/Y') : null,
+            'start_date' => $start_date ? Carbon::parse($start_date) : null,
+            'end_date' => $end_date ? Carbon::parse($end_date) : null,
             'tanggal_cetak' => $tanggal_cetak,
-            'tim_filter' => $timFilterText, // Hasil gabungan nama tim
+            'tim_filter' => $timFilterText,
             'tipe_filter' => strtoupper($tipe_absen ?? 'Semua'),
             'lokasi_filter' => $locObj ? $locObj->name : 'Semua Lokasi',
         ];

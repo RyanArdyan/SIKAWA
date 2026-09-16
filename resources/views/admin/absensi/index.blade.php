@@ -3,23 +3,81 @@
 @section('header', 'Laporan Absensi Pegawai')
 
 @push('styles')
-    {{-- CSS Select2 untuk tampilan multiple select yang rapi --}}
+    {{-- CSS Select2 --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        /* Penyesuaian tema Select2 agar cocok dengan Bootstrap 5 Dark Mode */
+        /* Sembunyikan tag bawaan Select2 Multiple agar berbentuk single box dropdown */
         .select2-container--default .select2-selection--multiple {
             background-color: var(--bs-body-bg, #212529) !important;
             border-color: var(--bs-border-color, #495057) !important;
             min-height: 38px;
+            height: 38px;
+            padding: 2px 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
         }
+
+        /* Mengubah item terpilih menjadi format text pendek */
+        .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+            display: block !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            padding-left: 0 !important;
+            color: var(--bs-body-color, #fff);
+        }
+
         .select2-container--default .select2-selection--multiple .select2-selection__choice {
-            background-color: #40BF89 !important;
-            border: none !important;
-            color: #fff !important;
+            display: none !important; /* Menyembunyikan chip tag */
         }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-            color: #fff !important;
-            margin-right: 5px;
+
+        .select2-container--default .select2-search--inline .select2-search__field {
+            display: none !important; /* Menyembunyikan input pengetikan utama */
+        }
+
+        /* Styling Dropdown list dengan Checkbox */
+        .select2-results__option {
+            padding: 8px 12px !important;
+            color: #212529;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #e9ecef !important;
+            color: #212529 !important;
+        }
+
+        .select-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .select-checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #40BF89;
+        }
+
+        /* Header Search di dalam Dropdown Menu */
+        .select2-dropdown {
+            border-color: var(--bs-border-color, #495057) !important;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .select2-search--dropdown {
+            padding: 6px 8px;
+            background-color: #f8f9fa;
+        }
+
+        .select2-search--dropdown .select2-search__field {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 4px 8px;
         }
     </style>
 @endpush
@@ -42,7 +100,7 @@
                     </div>
                 </div>
 
-                {{-- Filter Tim Kerja (Multiple Selection) --}}
+                {{-- Filter Tim Kerja (Dropdown Checkbox Multi-Select) --}}
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Tim Kerja (Bisa Pilih Banyak)</label>
                     <select name="tim_kerja_ids[]" id="select-tim-kerja" class="form-select bg-body border-secondary-subtle text-body" multiple>
@@ -98,7 +156,6 @@
                         value="{{ $print_date ?? date('Y-m-d') }}">
                 </div>
 
-                {{-- Ubah dari col-md-2 menjadi col-md-3 agar tidak terlalu sempit --}}
                 <div class="col-md-3 d-flex align-items-end gap-2">
                     {{-- Tombol Filter --}}
                     <button type="submit" class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
@@ -169,7 +226,6 @@
                                         <i class="bi bi-people-fill small"></i>
                                         {{ $a->user->tim_kerja->nama ?? 'Tanpa Tim' }}
                                     </small>
-                                    {{-- TAMBAHKAN LOKASI DI SINI --}}
                                     @if ($a->location)
                                         <br>
                                         <small class="text-primary fw-bold" style="font-size: 0.70rem;">
@@ -178,10 +234,8 @@
                                     @endif
                                 </td>
 
-                                {{-- Tipe Absen (WFO / WFA) dengan Riwayat Perubahan --}}
                                 <td class="text-center">
                                     @if ($a->reason_change_status)
-                                        {{-- Tampilan jika status telah diubah oleh Admin --}}
                                         <div class="d-flex flex-column align-items-center">
                                             <span
                                                 class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 mb-1">
@@ -193,7 +247,6 @@
                                             </span>
                                         </div>
                                     @else
-                                        {{-- Tampilan asli jika belum pernah diubah --}}
                                         @if ($a->tipe_absen == 'WFO')
                                             <span
                                                 class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2">
@@ -208,7 +261,6 @@
                                     @endif
                                 </td>
 
-                                {{-- Absen Masuk --}}
                                 <td class="text-body-secondary small">
                                     @if ($a->check_in_time)
                                         <div class="fw-bold text-body">{{ $a->check_in_time->format('H:i') }} WIB</div>
@@ -219,7 +271,6 @@
                                     @endif
                                 </td>
 
-                                {{-- Absen Pulang --}}
                                 <td class="text-body-secondary small">
                                     @if ($a->check_out_time)
                                         <div class="fw-bold text-body">{{ $a->check_out_time->format('H:i') }} WIB</div>
@@ -230,7 +281,6 @@
                                     @endif
                                 </td>
 
-                                {{-- Status Kehadiran --}}
                                 <td>
                                     @if ($a->status == 'terlambat')
                                         <span
@@ -258,7 +308,6 @@
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                     </span>
-
                                 </td>
                             </tr>
                         @empty
@@ -318,13 +367,49 @@
 
     <script>
         $(document).ready(function() {
-            // Inisialisasi Select2 untuk dropdown Tim Kerja (Multi-Select)
+            // Inisialisasi Select2 dengan Checkbox & Placeholder Kustom
             if ($('#select-tim-kerja').length) {
                 $('#select-tim-kerja').select2({
-                    placeholder: "-- Pilih Tim Kerja --",
-                    allowClear: true,
-                    width: '100%'
+                    placeholder: "Pilih Tim Kerja...",
+                    closeOnSelect: false,
+                    width: '100%',
+                    templateResult: formatOptionWithCheckbox,
+                    templateSelection: formatSelectionText
                 });
+
+                // Re-render selection text saat item dipilih / dihapus
+                $('#select-tim-kerja').on('change', function() {
+                    $(this).trigger('change.select2');
+                });
+            }
+
+            // Custom Renderer untuk item di dalam Dropdown (Tampilan Checkbox + Label)
+            function formatOptionWithCheckbox(option) {
+                if (!option.id) return option.text;
+
+                var isChecked = option.selected ? 'checked' : '';
+                var $option = $(
+                    '<div class="select-checkbox-item">' +
+                        '<input type="checkbox" ' + isChecked + ' />' +
+                        '<span>' + option.text + '</span>' +
+                    '</div>'
+                );
+                return $option;
+            }
+
+            // Custom Renderer untuk Label Input Utama ketika beberapa item dipilih
+            function formatSelectionText(option, container) {
+                var selectedOptions = $('#select-tim-kerja').val();
+                if (!selectedOptions || selectedOptions.length === 0) {
+                    return "Pilih Tim Kerja...";
+                }
+
+                var total = $('#select-tim-kerja option').length;
+                if (selectedOptions.length === total) {
+                    return "Semua Tim Kerja Dipilih";
+                }
+
+                return selectedOptions.length + " Tim Kerja Dipilih";
             }
 
             // Handle Klik Tombol Export PDF
@@ -336,7 +421,6 @@
 
                     const filterForm = document.getElementById('form-filter-laporan');
 
-                    // Ambil nilai filter standar
                     let startDate = filterForm.querySelector('input[name="start_date"]')?.value || '';
                     let endDate = filterForm.querySelector('input[name="end_date"]')?.value || '';
                     let printDate = filterForm.querySelector('input[name="print_date"]')?.value || '';
@@ -344,7 +428,6 @@
                     const tipeAbsen = filterForm.querySelector('[name="tipe_absen"]')?.value || '';
                     const locationId = filterForm.querySelector('[name="location_id"]')?.value || '';
 
-                    // Inisialisasi URLSearchParams dengan parameter non-array
                     let params = new URLSearchParams({
                         start_date: startDate,
                         end_date: endDate,
@@ -354,7 +437,6 @@
                         location_id: locationId
                     });
 
-                    // Ambil array ID tim kerja dari Select2
                     const selectedTeams = $('#select-tim-kerja').val();
                     if (selectedTeams && selectedTeams.length > 0) {
                         selectedTeams.forEach(id => {
@@ -362,7 +444,6 @@
                         });
                     }
 
-                    // Direct browser ke URL export PDF beserta Query String
                     let url = "{{ route('admin.absensi.exportReportPdf') }}";
                     window.location.href = url + '?' + params.toString();
                 });
