@@ -271,24 +271,40 @@
 
                         {{-- Pengaturan Keamanan Form Password Baru --}}
                         <div class="bg-body p-3 rounded border border-secondary border-opacity-10 mb-4">
-                            <h6 class="fw-bold text-body" style="font-size: 0.85rem;"><i
-                                    class="bi bi-shield-lock me-1 text-warning"></i> Ganti Password (Kosongkan jika tidak
-                                ingin diubah)</h6>
+                            <h6 class="fw-bold text-body" style="font-size: 0.85rem;">
+                                <i class="bi bi-shield-lock me-1 text-warning"></i> Ganti Password (Kosongkan jika tidak
+                                ingin diubah)
+                            </h6>
                             <div class="row mt-3">
+                                {{-- Password Baru --}}
                                 <div class="col-md-6 mb-3 mb-md-0">
                                     <label class="form-label small text-body-secondary">Password Baru</label>
-                                    <input type="password" name="password"
-                                        class="form-control bg-body border-secondary-subtle text-body @error('password') is-invalid @enderror"
-                                        placeholder="Minimal 6 karakter">
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <div class="input-group">
+                                        <input type="password" name="password" id="password"
+                                            class="form-control bg-body border-secondary-subtle text-body @error('password') is-invalid @enderror"
+                                            placeholder="Minimal 6 karakter">
+                                        <button class="btn btn-outline-secondary border-secondary-subtle" type="button"
+                                            onclick="togglePassword('password', 'icon-password')">
+                                            <i class="bi bi-eye-slash" id="icon-password"></i>
+                                        </button>
+                                        @error('password')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
+
+                                {{-- Konfirmasi Password Baru --}}
                                 <div class="col-md-6">
                                     <label class="form-label small text-body-secondary">Konfirmasi Password Baru</label>
-                                    <input type="password" name="password_confirmation"
-                                        class="form-control bg-body border-secondary-subtle text-body"
-                                        placeholder="Ulangi password baru">
+                                    <div class="input-group">
+                                        <input type="password" name="password_confirmation" id="password_confirmation"
+                                            class="form-control bg-body border-secondary-subtle text-body"
+                                            placeholder="Ulangi password baru">
+                                        <button class="btn btn-outline-secondary border-secondary-subtle" type="button"
+                                            onclick="togglePassword('password_confirmation', 'icon-confirm')">
+                                            <i class="bi bi-eye-slash" id="icon-confirm"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -305,3 +321,22 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            }
+        }
+    </script>
+@endpush
