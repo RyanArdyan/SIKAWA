@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Presensi Pegawai - SIKAWA')
+@section('title', 'Presensi Pegawai WFA - SIKAWA')
 
 @section('content')
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow border-0 overflow-hidden">
                 <div class="card-header text-white text-center py-3" style="background-color: #40BF89;">
-                    <h4 class="mb-0 fw-bold">ABSENSI KAMERA</h4>
+                    <h4 class="mb-0 fw-bold">ABSENSI KAMERA (WFA)</h4>
                     <small id="subtitle-absen">Silakan masukkan NIP untuk memulai</small>
                 </div>
 
@@ -28,17 +28,23 @@
                             style="width: 80%; height: 80%; pointer-events: none;"></div>
                     </div>
 
-                    <button id="btn-capture" class="btn btn-lg w-100 py-3 shadow-sm text-white"
-                        style="background-color: #40BF89; border: none;" disabled>
-                        <i class="bi bi-camera-fill me-2"></i> Ambil Foto & Kirim Absen
-                    </button>
+                    {{-- 2 TOMBOL PRESENSI --}}
+                    <div class="d-flex gap-2 mb-3">
+                        <button id="btn-masuk" class="btn btn-lg w-50 py-3 shadow-sm text-white"
+                            style="background-color: #40BF89; border: none;" disabled>
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Presensi Masuk
+                        </button>
+                        <button id="btn-keluar" class="btn btn-lg w-50 py-3 shadow-sm btn-warning fw-bold text-dark" disabled>
+                            <i class="bi bi-box-arrow-right me-2"></i> Presensi Keluar
+                        </button>
+                    </div>
 
                     {{-- CONTAINER UPLOAD LAPORAN --}}
                     <div id="container-upload" class="d-none mt-4 animate__animated animate__fadeIn">
                         <div class="card border-0 bg-light" style="border-left: 5px solid #40BF89 !important;">
                             <div class="card-body text-start">
                                 <h6 class="fw-bold mb-2" style="color: #40BF89;">
-                                    <i class="bi bi-file-earmark-pdf-fill"></i> UNGGAH LAPORAN HARIAN
+                                    <i class="bi bi-file-earmark-pdf-fill"></i> UNGGAH LAPORAN HARIAN WFA
                                 </h6>
                                 <p class="small text-muted">Silakan upload laporan kegiatan hari ini (PDF).</p>
                                 <div class="input-group">
@@ -68,7 +74,8 @@
         const nipInput = document.getElementById('nip');
         const namaDisplay = document.getElementById('nama-pegawai');
         const video = document.getElementById('kamera');
-        const btnCapture = document.getElementById('btn-capture');
+        const btnMasuk = document.getElementById('btn-masuk');
+        const btnKeluar = document.getElementById('btn-keluar');
         const canvas = document.getElementById('canvas');
         const containerUpload = document.getElementById('container-upload');
         const uploadStatus = document.getElementById('upload-status');
@@ -81,12 +88,8 @@
             navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "user",
-                        width: {
-                            ideal: 640
-                        },
-                        height: {
-                            ideal: 480
-                        }
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
                     }
                 })
                 .then(stream => {
@@ -99,16 +102,16 @@
                 });
         }
 
-        // Jalankan kamera saat halaman dimuat
         startKamera();
 
-        // 2. Handler Input NIP & Verifikasi Status Pegawai
+        // 2. Handler Input NIP & Buka Kunci Tombol
         nipInput.addEventListener('input', function() {
             const nip = this.value;
             if (nip.length >= 4) {
                 namaDisplay.innerText = "Mencari data...";
                 namaDisplay.style.color = "#6c757d";
 
+                // Memanggil endpoint backend untuk mengecek ketersediaan NIP
                 fetch(`/get-pegawai/${nip}`)
                     .then(res => res.json())
                     .then(data => {
@@ -116,51 +119,18 @@
                             namaDisplay.innerText = "Nama: " + data.nama;
                             namaDisplay.style.color = "#40BF89";
 
-                            // --- LOGIKA TOMBOL DINAMIS SIKAWA ---
-                            if (data.status === 'masuk') {
-                                btnCapture.innerHTML =
-                                    '<i class="bi bi-camera-fill me-2"></i> Ambil Foto & Absen Masuk';
-                                btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm text-white";
-                                btnCapture.style.backgroundColor = "#40BF89";
-                                btnCapture.disabled = false;
-                                containerUpload.classList.add('d-none');
-                                uploadStatus.innerHTML = "";
-
-                            } else if (data.status === 'pulang') {
-                                // KONDISI 1: Jika Laporan Sudah Diunggah -> Langsung Buka Tombol Pulang
-                                if (data.laporan_ready) {
-                                    btnCapture.innerHTML =
-                                        '<i class="bi bi-box-arrow-right me-2"></i> Ambil Foto & Absen Pulang';
-                                    btnCapture.className =
-                                        "btn btn-lg w-100 py-3 shadow-sm btn-warning fw-bold text-dark";
-                                    btnCapture.disabled = false;
-                                    containerUpload.classList.add('d-none');
-                                    uploadStatus.innerHTML = "";
-                                }
-                                // KONDISI 2: Jika Laporan Belum Diunggah -> Kunci Tombol & Tampilkan Form Upload
-                                else {
-                                    btnCapture.innerHTML =
-                                        '<i class="bi bi-lock-fill me-2"></i> Upload Laporan Dahulu';
-                                    btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-secondary";
-                                    btnCapture.disabled = true;
-                                    containerUpload.classList.remove('d-none');
-                                    uploadStatus.innerHTML = "";
-                                }
-
-                            } else {
-                                // Status 'selesai'
-                                btnCapture.innerHTML =
-                                    '<i class="bi bi-check-circle-fill me-2"></i> Sudah Absen Hari Ini';
-                                btnCapture.className = "btn btn-lg w-100 py-3 shadow-sm btn-secondary";
-                                btnCapture.disabled = true;
-                                containerUpload.classList.add('d-none');
-                                uploadStatus.innerHTML = "";
-                            }
-
+                            // Buka kunci kedua tombol agar bisa dipakai kapan saja
+                            btnMasuk.disabled = false;
+                            btnKeluar.disabled = false;
+                            containerUpload.classList.remove('d-none');
+                            uploadStatus.innerHTML = "";
                         } else {
-                            namaDisplay.innerText = data.message;
+                            namaDisplay.innerText = data.message || "NIP tidak ditemukan";
                             namaDisplay.style.color = "red";
-                            btnCapture.disabled = true;
+
+                            // Kunci kembali jika NIP salah
+                            btnMasuk.disabled = true;
+                            btnKeluar.disabled = true;
                             containerUpload.classList.add('d-none');
                             uploadStatus.innerHTML = "";
                         }
@@ -169,14 +139,22 @@
                         console.error("Fetch error:", err);
                         namaDisplay.innerText = "Gagal terhubung ke server.";
                     });
+            } else {
+                btnMasuk.disabled = true;
+                btnKeluar.disabled = true;
+                containerUpload.classList.add('d-none');
+                namaDisplay.innerText = "";
             }
         });
 
-        // 3. Handler Tombol Absen (Kamera + GPS)
-        btnCapture.addEventListener('click', () => {
-            const originalContent = btnCapture.innerHTML;
-            btnCapture.innerText = "Mengunci Lokasi & Mengambil Foto...";
-            btnCapture.disabled = true;
+        // 3. Fungsi Utama Presensi (Digunakan oleh Masuk & Keluar)
+        function kirimPresensi(tipe, tombol) {
+            const originalContent = tombol.innerHTML;
+            tombol.innerText = "Mengunci Lokasi & Mengambil Foto...";
+
+            // Kunci sementara kedua tombol saat proses berlangsung
+            btnMasuk.disabled = true;
+            btnKeluar.disabled = true;
 
             const gpsOptions = {
                 enableHighAccuracy: true,
@@ -193,7 +171,6 @@
 
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-
                 const dataURI = canvas.toDataURL('image/jpeg', 0.7);
 
                 fetch('{{ route('absen.store') }}', {
@@ -206,7 +183,8 @@
                             image: dataURI,
                             nip: nipInput.value,
                             latitude: position.coords.latitude,
-                            longitude: position.coords.longitude
+                            longitude: position.coords.longitude,
+                            tipe: tipe // Mengirimkan parameter masuk/keluar ke server
                         })
                     })
                     .then(res => res.json())
@@ -216,24 +194,36 @@
                             window.location.reload();
                         } else {
                             alert("Gagal: " + data.message);
-                            btnCapture.innerHTML = originalContent;
-                            btnCapture.disabled = false;
+                            tombol.innerHTML = originalContent;
+                            btnMasuk.disabled = false;
+                            btnKeluar.disabled = false;
                         }
                     })
                     .catch(err => {
                         alert("Terjadi kesalahan koneksi ke server.");
-                        btnCapture.innerHTML = originalContent;
-                        btnCapture.disabled = false;
+                        tombol.innerHTML = originalContent;
+                        btnMasuk.disabled = false;
+                        btnKeluar.disabled = false;
                     });
 
             }, (error) => {
                 let msg = "Izin lokasi (GPS) wajib aktif!";
-                if (error.code === 3) msg =
-                    "Gagal mendapatkan lokasi (Timeout). Pastikan GPS Anda aktif dan akurat.";
+                if (error.code === 3) msg = "Gagal mendapatkan lokasi (Timeout). Pastikan GPS Anda aktif dan akurat.";
                 alert(msg);
-                btnCapture.innerHTML = originalContent;
-                btnCapture.disabled = false;
+                tombol.innerHTML = originalContent;
+                btnMasuk.disabled = false;
+                btnKeluar.disabled = false;
             }, gpsOptions);
+        }
+
+        // Event Listener untuk Tombol Masuk
+        btnMasuk.addEventListener('click', () => {
+            kirimPresensi('masuk', btnMasuk);
+        });
+
+        // Event Listener untuk Tombol Keluar
+        btnKeluar.addEventListener('click', () => {
+            kirimPresensi('keluar', btnKeluar);
         });
 
         // 4. Handler Upload Laporan PDF
@@ -249,8 +239,7 @@
             formData.append('nip', nipInput.value);
 
             btnUpload.disabled = true;
-            uploadStatus.innerHTML =
-                '<span class="text-primary animate__animated animate__pulse animate__infinite d-block">Sedang mengunggah...</span>';
+            uploadStatus.innerHTML = '<span class="text-primary animate__animated animate__pulse animate__infinite d-block">Sedang mengunggah...</span>';
 
             fetch('{{ route('absen.uploadLaporan') }}', {
                     method: 'POST',
