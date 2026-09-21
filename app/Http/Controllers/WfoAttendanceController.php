@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\Location;
-use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +15,9 @@ class WfoAttendanceController extends Controller
         return view('pegawai.wfo');
     }
 
+    /**
+     * Memeriksa status pegawai berdasarkan NIP secara real-time
+     */
     public function getPegawai($nip)
     {
         $pegawai = User::where('nip', $nip)->first();
@@ -25,23 +26,38 @@ class WfoAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'NIP tidak terdaftar']);
         }
 
-        $settingJamMasuk = Setting::where('key', 'jam_masuk')->value('value') ?? '07:30';
-
+        // 1. Cari data presensi yang BELUM PULANG (check_out_time is null)
+        // Aman untuk SHIFT MALAM (misal masuk jam 23:00, pulang jam 07:00 besoknya)
         $attendance = Attendance::where('user_id', $pegawai->id)
-            ->whereDate('check_in_time', Carbon::today())
+            ->whereNull('check_out_time')
+            ->latest('check_in_time')
             ->first();
 
         $status = 'masuk';
         $pesan_tambahan = '';
-        $boleh_pulang = true; // Default selalu true agar bisa pulang kapan saja
+        $boleh_pulang = true;
 
         if ($attendance) {
-            if ($attendance->check_out_time) {
-                $status = 'selesai';
+            $status = 'pulang';
+
+            // Cek apakah durasi kerja sudah mencapai minimal 8 jam
+            if (! $attendance->isWorkDurationMet()) {
+                $boleh_pulang = false;
+                $jamPulang = $attendance->getMinCheckOutTime();
+                $pesan_tambahan = "Anda sudah absen masuk pada jam {$attendance->check_in_time->format('H:i')}. Minimal jam pulang Anda adalah pukul {$jamPulang} WIB (8 jam kerja).";
             } else {
-                $status = 'pulang';
-                $boleh_pulang = true;
-                $pesan_tambahan = 'Anda sudah absen masuk. Silakan kirim presensi untuk pulang.';
+                $pesan_tambahan = 'Masa kerja 8 jam terpenuhi. Silakan kirim presensi untuk pulang.';
+            }
+        } else {
+            // 2. Cek apakah ada presensi yang baru saja selesai (sudah check-out) dalam rentang 12 jam terakhir
+            $sudahSelesaiBaruSaja = Attendance::where('user_id', $pegawai->id)
+                ->whereNotNull('check_out_time')
+                ->where('check_out_time', '>=', Carbon::now()->subHours(12))
+                ->first();
+
+            if ($sudahSelesaiBaruSaja) {
+                $status = 'selesai';
+                $pesan_tambahan = 'Anda telah menyelesaikan presensi hari/shift ini.';
             }
         }
 
@@ -51,144 +67,78 @@ class WfoAttendanceController extends Controller
             'status' => $status,
             'boleh_pulang' => $boleh_pulang,
             'pesan_tambahan' => $pesan_tambahan,
-            'jam_masuk_setting' => $settingJamMasuk,
         ]);
     }
 
+    /**
+     * Menyimpan data presensi WFO (Masuk atau Pulang) tanpa melacak lokasi
+     */
     public function store(Request $request)
     {
-        // 1. Validasi Input Data
+        // Validasi Input Data (Hanya NIP dan foto)
         $request->validate([
             'nip' => 'required',
-            'latitude' => 'required',
-            'longitude' => 'required',
             'image' => 'required',
         ]);
 
-        // 2. Ambil Data Pegawai Berdasarkan NIP
+        // Ambil Data Pegawai berdasarkan NIP
         $pegawai = User::where('nip', $request->nip)->first();
-        $today = Carbon::today();
         $now = Carbon::now();
 
         if (! $pegawai) {
             return response()->json(['success' => false, 'message' => 'Pegawai tidak ditemukan']);
         }
 
-        // 3. Ambil Koordinat GPS
-        $userLat = $request->latitude;
-        $userLon = $request->longitude;
-
-        if (! $userLat || ! $userLon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mendapatkan lokasi GPS. Harap aktifkan GPS dan berikan izin lokasi.',
-            ]);
-        }
-
-        // 4. Hitung Radius Lokasi Terdekat (Haversine Formula) - Batas Radius 3000m
-        $locations = Location::all();
-        $currentLocation = null;
-        $radiusMaksimal = 3000;
-
-        $distanceInfo = 0;
-        $terdekat = null;
-
-        foreach ($locations as $loc) {
-            $earthRadius = 6371000; // Satuan Meter
-
-            $officeLat = (float) $loc->latitude;
-            $officeLon = (float) $loc->longitude;
-            $currentUserLat = (float) $userLat;
-            $currentUserLon = (float) $userLon;
-
-            $dLat = deg2rad($officeLat - $currentUserLat);
-            $dLon = deg2rad($officeLon - $currentUserLon);
-
-            $a = sin($dLat / 2) * sin($dLat / 2) +
-                 cos(deg2rad($currentUserLat)) * cos(deg2rad($officeLat)) *
-                 sin($dLon / 2) * sin($dLon / 2);
-
-            $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-            $distance = $earthRadius * $c;
-
-            if (is_null($terdekat) || $distance < $distanceInfo) {
-                $terdekat = $loc;
-                $distanceInfo = $distance;
-            }
-
-            if ($distance <= $radiusMaksimal) {
-                $currentLocation = $loc;
-                break;
-            }
-        }
-
-        if (! $currentLocation) {
-            $jarakBulat = round($distanceInfo);
-
-            return response()->json([
-                'success' => false,
-                'message' => "Di luar radius! Jarak Anda ke {$terdekat->name} adalah {$jarakBulat}m (Maksimal yang diizinkan: {$radiusMaksimal}m).",
-            ]);
-        }
-
-        // 5. Olah File Swafoto Base64 & Simpan ke Folder attendances
+        // Olah File Swafoto Base64 & Simpan ke storage/app/public/attendances
         $image = $request->image;
         $image = str_replace('data:image/jpeg;base64,', '', $image);
         $image = str_replace(' ', '+', $image);
-
         $imageName = 'wfo_' . $pegawai->nip . '_' . time() . '.jpg';
-
-        // Simpan ke storage/app/public/attendances
         Storage::disk('public')->put('attendances/' . $imageName, base64_decode($image));
 
-        // 6. Cek Riwayat Presensi Hari Ini
+        // Cek apakah pegawai memiliki sesi presensi aktif (masuk dan belum pulang)
         $attendance = Attendance::where('user_id', $pegawai->id)
-            ->whereDate('check_in_time', $today)
+            ->whereNull('check_out_time')
+            ->latest('check_in_time')
             ->first();
 
-        $settingJamMasuk = Setting::where('key', 'jam_masuk')->value('value') ?? '07:30';
-        $batasTerlambat = Carbon::parse($settingJamMasuk)->addMinutes(30);
-
         if (! $attendance) {
-            // --- ABSEN MASUK ---
-            $isTerlambat = $now->gt($batasTerlambat);
-
+            // --- PROSES ABSEN MASUK ---
             Attendance::create([
                 'user_id' => $pegawai->id,
-                'location_id' => $currentLocation->id,
+                'location_id' => $pegawai->location_id ?? null, // Mengambil ID lokasi default dari profil user jika ada
                 'check_in_time' => $now,
-                'latitude_in' => $userLat,
-                'longitude_in' => $userLon,
-                'photo_path' => $imageName, // Disesuaikan dengan nama kolom tabel
+                'photo_path' => $imageName,
                 'tipe_absen' => 'WFO',
-                'status' => $isTerlambat ? 'terlambat' : 'hadir',
+                'status' => 'hadir', // Fleksibel untuk 3 shift
                 'ip_address_log' => $request->ip(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil Presensi Masuk di {$currentLocation->name}. Selamat bekerja!",
+                'message' => 'Berhasil Presensi Masuk WFO. Selamat bekerja!',
             ]);
 
         } else {
-            // --- ABSEN PULANG ---
-            if ($attendance->check_out_time) {
+            // --- PROSES ABSEN PULANG ---
+            // Validasi: Wajib bekerja minimal 8 jam
+            if (! $attendance->isWorkDurationMet()) {
+                $jamPulang = $attendance->getMinCheckOutTime();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda sudah melakukan presensi pulang hari ini.',
+                    'message' => "Belum memenuhi 8 jam kerja. Anda baru dapat melakukan presensi pulang pukul {$jamPulang} WIB.",
                 ]);
             }
 
+            // Simpan data absen pulang
             $attendance->update([
                 'check_out_time' => $now,
-                'latitude_out' => $userLat,
-                'longitude_out' => $userLon,
-                'photo_path_out' => $imageName, // Disesuaikan dengan nama kolom tabel
+                'photo_path_out' => $imageName,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil Presensi Pulang dari {$currentLocation->name}. Hati-hati di jalan!",
+                'message' => 'Berhasil Presensi Pulang WFO. Terima kasih atas kerja keras Anda!',
             ]);
         }
     }
