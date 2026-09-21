@@ -87,8 +87,11 @@
     <div class="card border-0 shadow-sm mb-4 bg-body-tertiary">
         <div class="card-body p-4">
             <form id="form-filter-laporan" action="{{ route('admin.absensi.report') }}" method="GET" class="row g-3">
-                {{-- Filter Nama/NIP --}}
-                <div class="col-md-2">
+
+                {{-- BARIS 1 (Total 12 Kolom): --}}
+
+                {{-- 1. Filter Nama/NIP (Cari Pegawai) --}}
+                <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Cari Pegawai</label>
                     <div class="input-group">
                         <span class="input-group-text bg-body border-secondary-subtle border-end-0">
@@ -100,7 +103,7 @@
                     </div>
                 </div>
 
-                {{-- Filter Tim Kerja (Dropdown Checkbox Multi-Select) --}}
+                {{-- 2. Filter Tim Kerja --}}
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Tim Kerja (Bisa Pilih Banyak)</label>
                     <select name="tim_kerja_ids[]" id="select-tim-kerja" class="form-select bg-body border-secondary-subtle text-body" multiple>
@@ -112,8 +115,8 @@
                     </select>
                 </div>
 
-                {{-- FILTER: Tipe Absen --}}
-                <div class="col-md-2">
+                {{-- 3. FILTER: Tipe Absen --}}
+                <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Tipe Absen</label>
                     <select name="tipe_absen" class="form-select bg-body border-secondary-subtle text-body">
                         <option value="">Semua</option>
@@ -122,8 +125,8 @@
                     </select>
                 </div>
 
-                {{-- FILTER: Lokasi Kantor --}}
-                <div class="col-md-2">
+                {{-- 4. FILTER: Lokasi Kantor --}}
+                <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Lokasi Kantor</label>
                     <select name="location_id" class="form-select bg-body border-secondary-subtle text-body">
                         <option value="">Semua Lokasi</option>
@@ -135,31 +138,33 @@
                     </select>
                 </div>
 
-                {{-- Filter Tanggal Mulai --}}
-                <div class="col-md-2">
+                {{-- BARIS 2: --}}
+
+                {{-- 5. Filter Tanggal Mulai (Dipindah tepat di bawah "Cari Pegawai") --}}
+                <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Dari Tanggal</label>
                     <input type="date" name="start_date" class="form-control bg-body border-secondary-subtle text-body"
                         value="{{ $start_date }}">
                 </div>
 
-                {{-- Filter Tanggal Akhir --}}
-                <div class="col-md-2">
+                {{-- 6. Filter Tanggal Akhir --}}
+                <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Sampai Tanggal</label>
                     <input type="date" name="end_date" class="form-control bg-body border-secondary-subtle text-body"
                         value="{{ $end_date }}">
                 </div>
 
-                {{-- INPUT: Tanggal Cetak (Hanya untuk Super Admin) --}}
+                {{-- 7. INPUT: Tanggal Cetak (Khusus Super Admin) & Grup Tombol --}}
                 @if (auth()->check() && auth()->user()->role === 'super_admin')
-                    {{-- INPUT: Tanggal Cetak --}}
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold text-body-secondary">Tanggal Cetak</label>
                         <input type="date" name="print_date" class="form-control bg-body border-secondary-subtle text-body"
                             value="{{ $print_date ?? date('Y-m-d') }}">
                     </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                @else
+                    <div class="col-md-6 d-flex align-items-end gap-2">
                 @endif
-
-                <div class="col-md-3 d-flex align-items-end gap-2">
                     {{-- Tombol Filter --}}
                     <button type="submit" class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
                         style="background-color: #40BF89; border: none; height: 38px;">
