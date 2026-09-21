@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Location;
-use App\Models\Pegawai;
 use App\Models\Setting;
 use App\Models\TimKerja;
 use App\Models\User;
@@ -58,6 +57,7 @@ class AttendanceController extends Controller
                 // Jika sudah pernah absen masuk hari ini, pertahankan data yang paling awal
                 if ($attendance && $attendance->check_in_time) {
                     $jamMasukAwal = Carbon::parse($attendance->check_in_time)->format('H:i');
+
                     return response()->json([
                         'success' => true,
                         'message' => "Presensi masuk Anda sudah tercatat pada jam {$jamMasukAwal} WITA. (Sistem mempertahankan waktu masuk paling awal).",
@@ -382,7 +382,8 @@ class AttendanceController extends Controller
         $pdf = Pdf::loadView('pegawai.report_pdf', $data)
             ->setPaper('a4', 'landscape');
 
-        return $pdf->download('Riwayat_Absen_'.$nip.'_'.date('Ymd_His').'.pdf');
+        // Mengubah ->download() menjadi ->stream() agar dapat dipreview langsung di browser
+        return $pdf->stream('Riwayat_Absen_'.$nip.'_'.date('Ymd_His').'.pdf');
     }
 
     public function exportReportPdf(Request $request)
@@ -494,7 +495,8 @@ class AttendanceController extends Controller
         $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Laporan_Absensi_SIKAWA_'.date('Ymd_His').'.pdf');
+        // Mengubah ->download() menjadi ->stream() untuk preview di tab baru/browser
+        return $pdf->stream('Laporan_Absensi_SIKAWA_'.date('Ymd_His').'.pdf');
     }
 
     public function showDeletePage()
@@ -562,9 +564,9 @@ class AttendanceController extends Controller
     {
         // 1. Validasi input jam dan file foto
         $request->validate([
-            'check_in_time'  => 'required',
+            'check_in_time' => 'required',
             'check_out_time' => 'nullable',
-            'photo_path'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'photo_path' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo_path_out' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
@@ -573,15 +575,15 @@ class AttendanceController extends Controller
         // 2. Gabungkan tanggal transaksi asli agar format timestamp DB tetap akurat
         $tanggalAbsen = Carbon::parse($attendance->created_at)->format('Y-m-d');
 
-        $checkInDateTime = Carbon::parse($tanggalAbsen . ' ' . $request->check_in_time);
+        $checkInDateTime = Carbon::parse($tanggalAbsen.' '.$request->check_in_time);
         $checkOutDateTime = $request->check_out_time
-            ? Carbon::parse($tanggalAbsen . ' ' . $request->check_out_time)
+            ? Carbon::parse($tanggalAbsen.' '.$request->check_out_time)
             : null;
 
         $updateData = [
-            'check_in_time'  => $checkInDateTime,
+            'check_in_time' => $checkInDateTime,
             'check_out_time' => $checkOutDateTime,
-            'status'         => 'hadir',
+            'status' => 'hadir',
         ];
 
         // 3. Simpan / Ganti Foto Presensi MASUK ke storage/app/public/attendances
@@ -592,7 +594,7 @@ class AttendanceController extends Controller
             }
 
             $fileIn = $request->file('photo_path');
-            $filenameIn = ($attendance->user->nip ?? 'pegawai') . '_IN_' . time() . '.' . $fileIn->getClientOriginalExtension();
+            $filenameIn = ($attendance->user->nip ?? 'pegawai').'_IN_'.time().'.'.$fileIn->getClientOriginalExtension();
 
             // Hasil simpan: "attendances/NIP_IN_123456789.jpg"
             $updateData['photo_path'] = $fileIn->storeAs('attendances', $filenameIn, 'public');
@@ -606,7 +608,7 @@ class AttendanceController extends Controller
             }
 
             $fileOut = $request->file('photo_path_out');
-            $filenameOut = ($attendance->user->nip ?? 'pegawai') . '_OUT_' . time() . '.' . $fileOut->getClientOriginalExtension();
+            $filenameOut = ($attendance->user->nip ?? 'pegawai').'_OUT_'.time().'.'.$fileOut->getClientOriginalExtension();
 
             // Hasil simpan: "attendances/NIP_OUT_123456789.jpg"
             $updateData['photo_path_out'] = $fileOut->storeAs('attendances', $filenameOut, 'public');
