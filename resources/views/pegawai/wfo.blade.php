@@ -33,10 +33,21 @@
                         </div>
                     </div>
 
-                    <button id="btn-absen-wfo" class="btn btn-lg w-100 py-3 shadow-sm text-white fw-bold border-0"
-                        style="background-color: #40BF89; border-radius: 10px;" disabled>
-                        <i class="bi bi-send-fill me-2"></i> Kirim Presensi
-                    </button>
+                    {{-- Tombol Presensi Terpisah --}}
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <button id="btn-masuk" class="btn btn-lg w-100 py-3 shadow-sm text-white fw-bold border-0"
+                                style="background-color: #40BF89; border-radius: 10px;" disabled>
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Presensi Masuk
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button id="btn-keluar" class="btn btn-lg w-100 py-3 shadow-sm text-white fw-bold border-0"
+                                style="background-color: #ffc107; color: #000; border-radius: 10px;" disabled>
+                                <i class="bi bi-box-arrow-right me-1"></i> Presensi Keluar
+                            </button>
+                        </div>
+                    </div>
 
                     <p class="text-muted small mt-4 mb-0">
                         <i class="bi bi-info-circle"></i> Pastikan Anda terhubung ke jaringan BKK Pontianak dan mengaktifkan Kamera.
@@ -50,7 +61,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             const nipInput = document.getElementById('nip');
             const namaDisplay = document.getElementById('nama-pegawai');
-            const btnAbsen = document.getElementById('btn-absen-wfo');
+            const btnMasuk = document.getElementById('btn-masuk');
+            const btnKeluar = document.getElementById('btn-keluar');
             const video = document.getElementById('webcam');
             const canvas = document.getElementById('canvas');
 
@@ -61,11 +73,7 @@
                 if (cameraStream) return;
 
                 const constraints = {
-                    video: {
-                        facingMode: "user",
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
+                    video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
                     audio: false
                 };
 
@@ -88,45 +96,8 @@
                     });
             }
 
-            // Jalankan Kamera Otomatis Saat Halaman Dimuat
+            // Jalankan Kamera Otomatis saat Halaman Dimuat
             startCamera();
-
-            // Memperbarui tampilan tombol berdasarkan status pegawai dari server
-            function updateButtonUI(data) {
-                if (data.success) {
-                    namaDisplay.innerText = "Nama: " + data.nama;
-                    namaDisplay.style.color = "#40BF89";
-
-                    if (data.status === 'masuk') {
-                        btnAbsen.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Kirim Presensi Masuk';
-                        btnAbsen.style.backgroundColor = "#40BF89";
-                        btnAbsen.style.color = "#fff";
-                        btnAbsen.disabled = false;
-                    } else if (data.status === 'pulang') {
-                        btnAbsen.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i> Absen Pulang Sekarang';
-                        btnAbsen.style.backgroundColor = "#ffc107";
-                        btnAbsen.style.color = "#000";
-                        btnAbsen.disabled = !data.boleh_pulang;
-
-                        const info = document.createElement('div');
-                        info.innerHTML = `<small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> ${data.pesan_tambahan}</small>`;
-                        namaDisplay.appendChild(info);
-                    } else if (data.status === 'selesai') {
-                        btnAbsen.innerHTML = '<i class="bi bi-check-all me-2"></i> Presensi Hari Ini Selesai';
-                        btnAbsen.style.backgroundColor = "#6c757d";
-                        btnAbsen.style.color = "#fff";
-                        btnAbsen.disabled = true;
-
-                        const info = document.createElement('div');
-                        info.innerHTML = `<small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> ${data.pesan_tambahan}</small>`;
-                        namaDisplay.appendChild(info);
-                    }
-                } else {
-                    namaDisplay.innerText = data.message;
-                    namaDisplay.style.color = "red";
-                    btnAbsen.disabled = true;
-                }
-            }
 
             // Cek NIP secara real-time
             nipInput.addEventListener('input', function() {
@@ -134,24 +105,38 @@
                 if (nip.length >= 4) {
                     fetch(`/wfo/get-pegawai/${nip}`)
                         .then(res => res.json())
-                        .then(data => updateButtonUI(data))
+                        .then(data => {
+                            if (data.success) {
+                                namaDisplay.innerText = "Nama: " + data.nama;
+                                namaDisplay.style.color = "#40BF89";
+                                btnMasuk.disabled = false;
+                                btnKeluar.disabled = false;
+                            } else {
+                                namaDisplay.innerText = data.message;
+                                namaDisplay.style.color = "red";
+                                btnMasuk.disabled = true;
+                                btnKeluar.disabled = true;
+                            }
+                        })
                         .catch(err => console.error("Error Get Pegawai:", err));
                 } else {
                     namaDisplay.innerText = "";
-                    btnAbsen.disabled = true;
-                    btnAbsen.innerHTML = '<i class="bi bi-send-fill me-2"></i> Kirim Presensi';
-                    btnAbsen.style.backgroundColor = "#40BF89";
-                    btnAbsen.style.color = "#fff";
+                    btnMasuk.disabled = true;
+                    btnKeluar.disabled = true;
                 }
             });
 
-            // Eksekusi Proses Presensi
-            btnAbsen.addEventListener('click', () => {
-                const originalText = btnAbsen.innerHTML;
-                btnAbsen.innerText = "Memproses Foto & Presensi...";
-                btnAbsen.disabled = true;
+            // Eksekusi Proses Presensi (tipe: 'masuk' atau 'keluar')
+            function submitPresensi(type) {
+                const targetBtn = type === 'masuk' ? btnMasuk : btnKeluar;
+                const originalText = targetBtn.innerHTML;
 
-                // 1. Ambil Frame dari Kamera ke Canvas
+                // Nonaktifkan kedua tombol selama proses berjalan
+                btnMasuk.disabled = true;
+                btnKeluar.disabled = true;
+                targetBtn.innerText = "Memproses...";
+
+                // Ambil Frame dari Video Kamera ke Canvas
                 const context = canvas.getContext('2d');
                 const width = video.videoWidth > 0 ? video.videoWidth : 640;
                 const height = video.videoHeight > 0 ? video.videoHeight : 480;
@@ -159,15 +144,15 @@
                 canvas.width = width;
                 canvas.height = height;
 
-                // Flip horizontal agar hasil foto sesuai dengan tampilan cermin di layar
+                // Mirroring effect (flip horizontal)
                 context.translate(width, 0);
                 context.scale(-1, 1);
                 context.drawImage(video, 0, 0, width, height);
 
-                // Export ke format gambar Base64
+                // Konversi gambar ke format Base64
                 const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
-                // 2. Kirim Data ke Controller via Fetch API (Tanpa Koordinat GPS)
+                // Kirim data ke Controller
                 fetch('{{ route('absen.storeWfo') }}', {
                     method: 'POST',
                     headers: {
@@ -176,7 +161,8 @@
                     },
                     body: JSON.stringify({
                         nip: nipInput.value.trim(),
-                        image: imageBase64
+                        image: imageBase64,
+                        tipe: type
                     })
                 })
                 .then(res => res.json())
@@ -185,17 +171,22 @@
                     if (data.success) {
                         location.reload();
                     } else {
-                        btnAbsen.innerHTML = originalText;
-                        btnAbsen.disabled = false;
+                        targetBtn.innerHTML = originalText;
+                        btnMasuk.disabled = false;
+                        btnKeluar.disabled = false;
                     }
                 })
                 .catch(err => {
                     console.error("Error Store WFO:", err);
                     alert("Terjadi kesalahan sistem saat mengirim data.");
-                    btnAbsen.innerHTML = originalText;
-                    btnAbsen.disabled = false;
+                    targetBtn.innerHTML = originalText;
+                    btnMasuk.disabled = false;
+                    btnKeluar.disabled = false;
                 });
-            });
+            }
+
+            btnMasuk.addEventListener('click', () => submitPresensi('masuk'));
+            btnKeluar.addEventListener('click', () => submitPresensi('keluar'));
         });
     </script>
 @endsection
