@@ -43,29 +43,22 @@ class Attendance extends Model
         return now()->diffInHours($this->check_in_time) >= 8;
     }
 
-    /**
-     * Mendapatkan waktu minimal untuk diperbolehkan pulang (8 jam kerja).
-     */
     public function getMinCheckOutTime()
     {
         if (! $this->check_in_time) {
             return null;
         }
 
-        return $this->check_in_time->addHours(8)->format('H:i');
+        return $this->check_in_time->copy()->addHours(8)->format('H:i');
     }
 
-    /**
-     * HELPER BARU: Mendapatkan waktu minimal untuk diperbolehkan upload laporan.
-     * Sesuai kebijakan: 1 jam setelah absen masuk.
-     */
     public function getMinUploadTime()
     {
         if (! $this->check_in_time) {
             return null;
         }
 
-        return $this->check_in_time->addHour()->format('H:i');
+        return $this->check_in_time->copy()->addHour()->format('H:i');
     }
 
     // Relasi ke Location (Baru)

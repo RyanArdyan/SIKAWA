@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Location;
-use App\Models\Setting; // Import model Setting
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class WfoAttendanceController extends Controller
 {
@@ -39,7 +40,6 @@ class WfoAttendanceController extends Controller
                 $status = 'selesai';
             } else {
                 $status = 'pulang';
-                // BAGIAN INI DIHAPUS/DIKOSONGKAN agar tidak ada pengecekan 8 jam lagi
                 $boleh_pulang = true;
                 $pesan_tambahan = 'Anda sudah absen masuk. Silakan kirim presensi untuk pulang.';
             }
@@ -57,7 +57,15 @@ class WfoAttendanceController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Ambil data pegawai berdasarkan NIP yang dikirim dari Frontend
+        // 1. Validasi Input Data
+        $request->validate([
+            'nip' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
+            'image' => 'required',
+        ]);
+
+        // 2. Ambil Data Pegawai Berdasarkan NIP
         $pegawai = User::where('nip', $request->nip)->first();
         $today = Carbon::today();
         $now = Carbon::now();
@@ -66,7 +74,7 @@ class WfoAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Pegawai tidak ditemukan']);
         }
 
-        // 2. Ambil Koordinat dari Request (dikirim via JavaScript navigator.geolocation)
+        // 3. Ambil Koordinat GPS
         $userLat = $request->latitude;
         $userLon = $request->longitude;
 
@@ -77,10 +85,10 @@ class WfoAttendanceController extends Controller
             ]);
         }
 
-        // 3. LOGIKA RADIUS (Haversine Formula) - DIKUNCI DI 2000 METER
+        // 4. Hitung Radius Lokasi Terdekat (Haversine Formula) - Batas Radius 3000m
         $locations = Location::all();
         $currentLocation = null;
-        $radiusMaksimal = 3000; // Mengunci batas radius maksimal menjadi 2000 meter (2 Km)
+        $radiusMaksimal = 3000;
 
         $distanceInfo = 0;
         $terdekat = null;
@@ -88,7 +96,6 @@ class WfoAttendanceController extends Controller
         foreach ($locations as $loc) {
             $earthRadius = 6371000; // Satuan Meter
 
-            // Paksa konversi tipe data ke float agar perhitungan fungsi matematika akurat
             $officeLat = (float) $loc->latitude;
             $officeLon = (float) $loc->longitude;
             $currentUserLat = (float) $userLat;
@@ -104,13 +111,11 @@ class WfoAttendanceController extends Controller
             $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
             $distance = $earthRadius * $c;
 
-            // Simpan data jarak terdekat untuk ditampilkan di pesan error jika gagal
             if (is_null($terdekat) || $distance < $distanceInfo) {
                 $terdekat = $loc;
                 $distanceInfo = $distance;
             }
 
-            // Memeriksa jika jarak user masuk dalam radius 2000 meter
             if ($distance <= $radiusMaksimal) {
                 $currentLocation = $loc;
                 break;
@@ -126,25 +131,35 @@ class WfoAttendanceController extends Controller
             ]);
         }
 
-        // 4. CEK RIWAYAT ABSENSI HARI INI
+        // 5. Olah File Swafoto Base64 & Simpan ke Folder attendances
+        $image = $request->image;
+        $image = str_replace('data:image/jpeg;base64,', '', $image);
+        $image = str_replace(' ', '+', $image);
+
+        $imageName = 'wfo_' . $pegawai->nip . '_' . time() . '.jpg';
+
+        // Simpan ke storage/app/public/attendances
+        Storage::disk('public')->put('attendances/' . $imageName, base64_decode($image));
+
+        // 6. Cek Riwayat Presensi Hari Ini
         $attendance = Attendance::where('user_id', $pegawai->id)
             ->whereDate('check_in_time', $today)
             ->first();
 
-        // Ambil jam masuk dari tabel settings (default 07:30)
         $settingJamMasuk = Setting::where('key', 'jam_masuk')->value('value') ?? '07:30';
         $batasTerlambat = Carbon::parse($settingJamMasuk)->addMinutes(30);
 
         if (! $attendance) {
-            // --- LOGIKA ABSEN MASUK ---
+            // --- ABSEN MASUK ---
             $isTerlambat = $now->gt($batasTerlambat);
 
             Attendance::create([
                 'user_id' => $pegawai->id,
-                'location_id' => $currentLocation->id, // Mengisi location_id dari hasil deteksi radius
+                'location_id' => $currentLocation->id,
                 'check_in_time' => $now,
                 'latitude_in' => $userLat,
                 'longitude_in' => $userLon,
+                'photo_path' => $imageName, // Disesuaikan dengan nama kolom tabel
                 'tipe_absen' => 'WFO',
                 'status' => $isTerlambat ? 'terlambat' : 'hadir',
                 'ip_address_log' => $request->ip(),
@@ -156,7 +171,7 @@ class WfoAttendanceController extends Controller
             ]);
 
         } else {
-            // --- LOGIKA ABSEN PULANG ---
+            // --- ABSEN PULANG ---
             if ($attendance->check_out_time) {
                 return response()->json([
                     'success' => false,
@@ -164,11 +179,11 @@ class WfoAttendanceController extends Controller
                 ]);
             }
 
-            // Update data pulang (menggunakan koordinat saat ini)
             $attendance->update([
                 'check_out_time' => $now,
                 'latitude_out' => $userLat,
                 'longitude_out' => $userLon,
+                'photo_path_out' => $imageName, // Disesuaikan dengan nama kolom tabel
             ]);
 
             return response()->json([
