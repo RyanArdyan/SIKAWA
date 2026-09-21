@@ -25,7 +25,8 @@
                     </div>
                 </div>
 
-                <form action="{{ route('admin.laporan.updateLupaAbsen', $attendance->id) }}" method="POST">
+                {{-- Tambahan enctype="multipart/form-data" agar bisa mengunggah file --}}
+                <form action="{{ route('admin.laporan.updateLupaAbsen', $attendance->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -43,6 +44,28 @@
                         @error('check_in_time') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
+                    {{-- Input Foto Masuk --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-body-secondary">Foto Presensi Masuk</label>
+                        @if($attendance->photo_path)
+                            <div class="mb-2">
+                                <img src="{{ asset('storage/' . $attendance->photo_path) }}" alt="Foto Masuk" class="img-thumbnail rounded" style="max-height: 120px; object-fit: cover;">
+                                <small class="d-block text-muted">Foto saat ini</small>
+                            </div>
+                        @endif
+                        <div class="input-group">
+                            <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                <i class="bi bi-camera text-success"></i>
+                            </span>
+                            <input type="file" name="photo_path" accept="image/*"
+                                class="form-control bg-body border-secondary-subtle text-body border-start-0 @error('photo_path') is-invalid @enderror">
+                        </div>
+                        <div class="form-text mt-1 text-body-secondary" style="font-size: 0.8rem;">
+                            Kosongkan jika tidak ingin mengubah/menambahkan foto masuk.
+                        </div>
+                        @error('photo_path') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                    </div>
+
                     {{-- Input Jam Pulang --}}
                     <div class="mb-4">
                         <label class="form-label fw-bold text-body-secondary">Jam Pulang (Check Out)</label>
@@ -58,6 +81,28 @@
                             <i class="bi bi-info-circle me-1 text-info"></i> Kosongkan jika pegawai belum melapor jam pulang.
                         </div>
                         @error('check_out_time') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                    </div>
+
+                    {{-- Input Foto Keluar --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-body-secondary">Foto Presensi Keluar</label>
+                        @if($attendance->photo_path_out)
+                            <div class="mb-2">
+                                <img src="{{ asset('storage/' . $attendance->photo_path_out) }}" alt="Foto Keluar" class="img-thumbnail rounded" style="max-height: 120px; object-fit: cover;">
+                                <small class="d-block text-muted">Foto saat ini</small>
+                            </div>
+                        @endif
+                        <div class="input-group">
+                            <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+                                <i class="bi bi-camera text-danger"></i>
+                            </span>
+                            <input type="file" name="photo_path_out" accept="image/*"
+                                class="form-control bg-body border-secondary-subtle text-body border-start-0 @error('photo_path_out') is-invalid @enderror">
+                        </div>
+                        <div class="form-text mt-1 text-body-secondary" style="font-size: 0.8rem;">
+                            Kosongkan jika tidak ingin mengubah/menambahkan foto keluar.
+                        </div>
+                        @error('photo_path_out') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     {{-- Alert Info Sinkronisasi Status --}}

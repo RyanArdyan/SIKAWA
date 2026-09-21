@@ -560,20 +560,62 @@ class AttendanceController extends Controller
 
     public function updateLupaAbsen(Request $request, $id)
     {
+        // 1. Validasi input jam dan file foto
         $request->validate([
-            'check_in_time' => 'required',
+            'check_in_time'  => 'required',
             'check_out_time' => 'nullable',
+            'photo_path'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'photo_path_out' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        $attendance = Attendance::findOrFail($id);
+        $attendance = Attendance::with('user')->findOrFail($id);
 
-        $attendance->update([
-            'check_in_time' => $request->check_in_time,
-            'check_out_time' => $request->check_out_time,
-            'status' => 'hadir',
-        ]);
+        // 2. Gabungkan tanggal transaksi asli agar format timestamp DB tetap akurat
+        $tanggalAbsen = Carbon::parse($attendance->created_at)->format('Y-m-d');
 
-        return redirect()->route('admin.absensi.report')->with('success', 'Data lupa absen berhasil diperbarui.');
+        $checkInDateTime = Carbon::parse($tanggalAbsen . ' ' . $request->check_in_time);
+        $checkOutDateTime = $request->check_out_time
+            ? Carbon::parse($tanggalAbsen . ' ' . $request->check_out_time)
+            : null;
+
+        $updateData = [
+            'check_in_time'  => $checkInDateTime,
+            'check_out_time' => $checkOutDateTime,
+            'status'         => 'hadir',
+        ];
+
+        // 3. Simpan / Ganti Foto Presensi MASUK ke storage/app/public/attendances
+        if ($request->hasFile('photo_path')) {
+            // Hapus foto masuk lama jika ada di folder storage/app/public/attendances
+            if ($attendance->photo_path && Storage::disk('public')->exists($attendance->photo_path)) {
+                Storage::disk('public')->delete($attendance->photo_path);
+            }
+
+            $fileIn = $request->file('photo_path');
+            $filenameIn = ($attendance->user->nip ?? 'pegawai') . '_IN_' . time() . '.' . $fileIn->getClientOriginalExtension();
+
+            // Hasil simpan: "attendances/NIP_IN_123456789.jpg"
+            $updateData['photo_path'] = $fileIn->storeAs('attendances', $filenameIn, 'public');
+        }
+
+        // 4. Simpan / Ganti Foto Presensi KELUAR ke storage/app/public/attendances
+        if ($request->hasFile('photo_path_out')) {
+            // Hapus foto keluar lama jika ada di folder storage/app/public/attendances
+            if ($attendance->photo_path_out && Storage::disk('public')->exists($attendance->photo_path_out)) {
+                Storage::disk('public')->delete($attendance->photo_path_out);
+            }
+
+            $fileOut = $request->file('photo_path_out');
+            $filenameOut = ($attendance->user->nip ?? 'pegawai') . '_OUT_' . time() . '.' . $fileOut->getClientOriginalExtension();
+
+            // Hasil simpan: "attendances/NIP_OUT_123456789.jpg"
+            $updateData['photo_path_out'] = $fileOut->storeAs('attendances', $filenameOut, 'public');
+        }
+
+        // 5. Simpan perubahan ke database
+        $attendance->update($updateData);
+
+        return redirect()->route('admin.absensi.report')->with('success', 'Data lupa absen dan foto berhasil diperbarui.');
     }
 
     public function createManual()
