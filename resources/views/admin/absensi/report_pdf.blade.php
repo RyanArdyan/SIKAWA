@@ -18,34 +18,43 @@
             line-height: 1.3;
         }
 
-        /* Header Kop Surat */
-        .header {
+        /* Header Kop Surat Teks Murni (Tanpa Gambar) */
+        .header-container {
+            width: 100%;
             text-align: center;
-            margin-bottom: 12px;
             border-bottom: 2px solid #000;
-            padding-bottom: 6px;
-            position: relative;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
         }
 
-        .header h3 {
-            margin: 0;
+        .header-kemenkes {
             font-size: 11pt;
             font-weight: bold;
+            color: #00A8B5;
             letter-spacing: 0.5px;
+            margin: 0;
+            text-transform: uppercase;
         }
 
-        .header h2 {
-            margin: 2px 0;
-            font-size: 13pt;
+        .header-bkk {
+            font-size: 14pt;
             font-weight: bold;
+            color: #E28427;
             letter-spacing: 0.5px;
+            margin: 3px 0 6px 0;
+            text-transform: uppercase;
         }
 
-        .header p {
-            margin: 3px 0 0;
-            font-size: 7.5pt;
-            font-style: italic;
-            color: #444;
+        .header-address {
+            font-size: 8pt;
+            color: #333;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .header-address .separator {
+            margin: 0 6px;
+            color: #aaa;
         }
 
         /* Tabel Informasi Filter */
@@ -96,34 +105,12 @@
             text-align: center;
         }
 
-        .text-end {
-            text-align: right;
-        }
-
         .fw-bold {
             font-weight: bold;
         }
 
         .text-muted {
             color: #6c757d;
-        }
-
-        .badge-status {
-            display: inline-block;
-            padding: 2px 5px;
-            font-size: 7pt;
-            font-weight: bold;
-            border-radius: 3px;
-        }
-
-        .status-terlambat {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        .status-hadir {
-            color: #198754;
-            font-weight: bold;
         }
 
         /* Blok Tanda Tangan */
@@ -151,11 +138,15 @@
 </head>
 
 <body>
-    {{-- Header Kop Surat Kedinasan --}}
-    <div class="header">
-        <h3>KEMENTERIAN KESEHATAN REPUBLIK INDONESIA</h3>
-        <h2>BALAI KEKARANTINAAN KESEHATAN KELAS I PONTIANAK</h2>
-        <p>Jl. Jenderal Ahmad Yani, Arang Limbung, Kec. Sungai Raya, Kabupaten Kubu Raya, Kalimantan Barat 78391</p>
+    {{-- Header Kop Surat Teks Murni --}}
+    <div class="header-container">
+        <div class="header-kemenkes">Kementerian Kesehatan Republik Indonesia</div>
+        <div class="header-bkk">Balai Kekarantinaan Kesehatan Kelas I Pontianak</div>
+        <div class="header-address">
+            Jl. Arteri Supadio No.Km. 17, Limbung, Kec. Sungai Raya, Kabupaten Kubu Raya, Kalimantan Barat 78391
+            <br>
+            Whatsapp: 62 811-5672-778 <span class="separator">|</span> Website: www.bkkpontianak.id
+        </div>
     </div>
 
     {{-- Tabel Informasi Filter Laporan --}}
@@ -196,16 +187,14 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 25px;">No</th>
-                <th style="width: 55px;">Hari</th>
-                <th style="width: 65px;">Tanggal</th>
+                <th style="width: 30px;">No</th>
+                <th style="width: 70px;">Hari</th>
+                <th style="width: 80px;">Tanggal</th>
                 <th>Nama Pegawai</th>
-                <th style="width: 85px;">NIP</th>
-                <th style="width: 60px;">Tipe</th>
-                <th style="width: 50px;">Masuk</th>
-                <th style="width: 50px;">Pulang</th>
-                <th style="width: 65px;">Jam Kerja</th>
-                <th style="width: 140px;">Keterangan</th>
+                <th style="width: 120px;">NIP</th>
+                <th style="width: 70px;">Masuk</th>
+                <th style="width: 70px;">Pulang</th>
+                <th style="width: 90px;">Jam Kerja</th>
             </tr>
         </thead>
         <tbody>
@@ -256,41 +245,16 @@
                     {{-- NIP --}}
                     <td class="text-center">{{ $a->user->nip ?? '-' }}</td>
 
-                    {{-- Logika Tipe Absen --}}
-                    <td class="text-center">
-                        @if (!empty($a->reason_change_status))
-                            <span style="text-decoration: line-through; color: #888;">
-                                {{ $a->tipe_absen == 'WFA' ? 'WFO' : 'WFA' }}
-                            </span>
-                            <strong>&rarr; {{ $a->tipe_absen }}</strong>
-                        @else
-                            {{ $a->tipe_absen ?? '-' }}
-                        @endif
-                    </td>
-
                     {{-- Jam Masuk & Pulang --}}
                     <td class="text-center">{{ $checkIn ? $checkIn->format('H:i') : '-' }}</td>
                     <td class="text-center">{{ $checkOut ? $checkOut->format('H:i') : '-' }}</td>
 
                     {{-- Durasi --}}
                     <td class="text-center">{{ $durasiKerja }}</td>
-
-                    {{-- Keterangan / Status --}}
-                    <td style="font-size: 7.5pt;">
-                        @if ($a->status == 'terlambat')
-                            <span class="status-terlambat">[Terlambat]</span>
-                        @else
-                            <span class="status-hadir">[Hadir]</span>
-                        @endif
-
-                        @if (!empty($a->reason_change_status))
-                            <br><small class="text-muted">Revisi: {{ $a->reason_change_status }}</small>
-                        @endif
-                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" class="text-center" style="padding: 20px; color: #666;">
+                    <td colspan="8" class="text-center" style="padding: 20px; color: #666;">
                         Tidak ada data absensi yang ditemukan untuk kriteria filter ini.
                     </td>
                 </tr>

@@ -379,7 +379,7 @@ class AttendanceController extends Controller
             'lokasi_filter' => 'Semua Lokasi',
         ];
 
-        $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
+        $pdf = Pdf::loadView('pegawai.report_pdf', $data)
             ->setPaper('a4', 'landscape');
 
         return $pdf->download('Riwayat_Absen_'.$nip.'_'.date('Ymd_His').'.pdf');
@@ -492,7 +492,7 @@ class AttendanceController extends Controller
         ];
 
         $pdf = Pdf::loadView('admin.absensi.report_pdf', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan_Absensi_SIKAWA_'.date('Ymd_His').'.pdf');
     }
