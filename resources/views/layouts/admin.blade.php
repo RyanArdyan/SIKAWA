@@ -40,7 +40,6 @@
 
         .sidebar-brand-container {
             padding: 20px 15px;
-            /* Sedikit dikurangi agar lebih compact */
             text-align: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             margin-bottom: 20px;
@@ -49,16 +48,13 @@
 
         .logo-img {
             width: 100%;
-            /* Mengikuti lebar container */
             max-width: 180px;
-            /* Batas maksimal lebar agar tidak terlalu besar */
             height: auto;
-            /* Menjaga rasio foto agar tidak gepeng */
             filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
             object-fit: contain;
         }
 
-        /* Perbaikan Nav Link & Tombol Keluar */
+        /* Nav Link & Tombol Keluar */
         .sidebar .nav-link {
             color: rgba(255, 255, 255, 0.9);
             padding: 14px 25px;
@@ -79,10 +75,8 @@
             border-radius: 6px;
         }
 
-        /* PERBAIKAN KONTRAS: Tombol Keluar ke Absen */
         .sidebar .nav-link.text-danger-custom {
             background: rgba(0, 0, 0, 0.2);
-            /* Memberi base gelap agar teks terbaca */
             color: #fff !important;
             margin: 20px 12px 0 12px;
             border-radius: 6px;
@@ -150,16 +144,28 @@
 
                     <ul class="nav flex-column mt-2">
 
-                        {{-- ========================================== --}}
-                        {{-- MENU KHUSUS ADMIN & SUPER ADMIN            --}}
-                        {{-- ========================================== --}}
-                        @if (auth()->user()->role !== 'pegawai')
+                        {{-- 1. DASHBOARD (Akses: super_admin, admin, operator_laporan) --}}
+                        @if (in_array(auth()->user()->role, ['super_admin', 'admin', 'operator_laporan']))
                             <li class="nav-item">
                                 <a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}"
                                     href="/admin/dashboard">
                                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                                 </a>
                             </li>
+                        @endif
+
+                        {{-- 2. KHUSUS SUPER ADMIN (Hanya Kelola Admin) --}}
+                        @if (auth()->user()->role === 'super_admin')
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/manage-admins*') ? 'active' : '' }}"
+                                    href="/admin/manage-admins">
+                                    <i class="bi bi-shield-lock me-2"></i> Kelola Admin
+                                </a>
+                            </li>
+                        @endif
+
+                        {{-- 3. KHUSUS ADMIN (Pengelolaan Operasional Utama) --}}
+                        @if (auth()->user()->role === 'admin')
                             <li class="nav-item">
                                 <a class="nav-link {{ Request::is('admin/tim-kerja*') ? 'active' : '' }}"
                                     href="/admin/tim-kerja">
@@ -172,17 +178,6 @@
                                     <i class="bi bi-people me-2"></i> Data Pegawai
                                 </a>
                             </li>
-
-                            {{-- MENU KHUSUS SUPER ADMIN --}}
-                            @if (auth()->user()->isSuperAdmin())
-                                <li class="nav-item">
-                                    <a class="nav-link {{ Request::is('admin/manage-admins*') ? 'active' : '' }}"
-                                        href="/admin/manage-admins">
-                                        <i class="bi bi-shield-lock me-2"></i> Kelola Admin
-                                    </a>
-                                </li>
-                            @endif
-
                             <li class="nav-item">
                                 <a class="nav-link {{ Request::is('admin/absensi/hapus-massal*') ? 'active' : '' }}"
                                     href="/admin/absensi/hapus-massal">
@@ -196,12 +191,6 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ Request::is('admin/laporan*') ? 'active' : '' }}"
-                                    href="/admin/laporan">
-                                    <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}"
                                     href="{{ route('admin.settings') }}">
                                     <i class="bi bi-gear me-2"></i> Pengaturan
@@ -209,6 +198,17 @@
                             </li>
                         @endif
 
+                        {{-- 4. KHUSUS ADMIN & OPERATOR LAPORAN (Lihat & Export Laporan) --}}
+                        @if (in_array(auth()->user()->role, ['admin', 'operator_laporan']))
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/laporan*') ? 'active' : '' }}"
+                                    href="/admin/laporan">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
+                                </a>
+                            </li>
+                        @endif
+
+                        {{-- 5. MENU UMUM PEGAWAI / LOGGED IN USER --}}
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('pegawai/biodata*') ? 'active' : '' }}"
                                 href="/pegawai/biodata">
