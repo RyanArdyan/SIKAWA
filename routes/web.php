@@ -73,6 +73,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/laporan/{id}/update-lupa-absen', [AttendanceController::class, 'updateLupaAbsen'])->name('laporan.updateLupaAbsen');
     Route::get('/laporan/create-manual', [AttendanceController::class, 'createManual'])->name('laporan.createManual');
     Route::post('/laporan/store-manual', [AttendanceController::class, 'storeManual'])->name('laporan.storeManual');
+    Route::delete('/laporan/bulk-delete', [AttendanceController::class, 'bulkDelete'])->name('laporan.bulkDelete');
 
     // CRUD Pegawai, Tim Kerja, & kantor
     Route::resource('pegawai', PegawaiController::class);

@@ -651,4 +651,19 @@ class AttendanceController extends Controller
 
         return redirect()->route('admin.absensi.report')->with('success', 'Presensi manual berhasil dibuat.');
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:attendances,id'],
+        ]);
+
+        Attendance::whereIn('id', $request->ids)->delete();
+
+        return back()->with(
+            'success',
+            count($request->ids).' riwayat kehadiran berhasil dihapus.'
+        );
+    }
 }
