@@ -8,8 +8,8 @@
 
     <style>
         /* =========================================================
-             * SELECT2
-             * ========================================================= */
+                     * SELECT2
+                     * ========================================================= */
 
         /* Sembunyikan tag bawaan Select2 Multiple agar berbentuk single box dropdown */
         .select2-container--default .select2-selection--multiple {
@@ -88,8 +88,8 @@
         }
 
         /* =========================================================
-             * BULK DELETE
-             * ========================================================= */
+                     * BULK DELETE
+                     * ========================================================= */
 
         .attendance-select-checkbox {
             width: 18px;
@@ -150,10 +150,13 @@
 @endpush
 @section('content')
 
-{{-- Cek role operator_laporan --}}
-@php
-    $isOperatorLaporan = auth()->check() && auth()->user()->role === 'operator_laporan';
-@endphp
+    {{-- Cek role operator_laporan --}}
+
+    @php
+
+        $isOperatorLaporan = auth()->check() && auth()->user()->role === 'operator_laporan';
+
+    @endphp
 
     {{-- =========================================================
 
@@ -188,9 +191,7 @@
                         </span>
 
                         <input type="text" name="nip"
-
                             class="form-control bg-body border-secondary-subtle text-body border-start-0"
-
                             placeholder="NIP atau Nama..." value="{{ $nip ?? '' }}">
 
                     </div>
@@ -208,19 +209,15 @@
                     </label>
 
                     <select name="tim_kerja_ids[]" id="select-tim-kerja"
-
                         class="form-select bg-body border-secondary-subtle text-body" multiple>
 
                         @foreach ($timKerjas as $tim)
-
                             <option value="{{ $tim->id }}"
-
                                 {{ in_array($tim->id, (array) ($timKerjaIds ?? [])) ? 'selected' : '' }}>
 
                                 {{ $tim->nama }}
 
                             </option>
-
                         @endforeach
 
                     </select>
@@ -276,13 +273,11 @@
                         </option>
 
                         @foreach ($locations as $loc)
-
                             <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>
 
                                 {{ $loc->name }}
 
                             </option>
-
                         @endforeach
 
                     </select>
@@ -302,7 +297,6 @@
                     </label>
 
                     <input type="date" name="start_date" class="form-control bg-body border-secondary-subtle text-body"
-
                         value="{{ $start_date }}">
 
                 </div>
@@ -318,7 +312,6 @@
                     </label>
 
                     <input type="date" name="end_date" class="form-control bg-body border-secondary-subtle text-body"
-
                         value="{{ $end_date }}">
 
                 </div>
@@ -326,7 +319,6 @@
                 {{-- 7. INPUT: Tanggal Cetak & Grup Tombol --}}
 
                 @if (auth()->check() && auth()->user()->role === 'super_admin')
-
                     <div class="col-md-2">
 
                         <label class="form-label fw-bold text-body-secondary">
@@ -336,25 +328,19 @@
                         </label>
 
                         <input type="date" name="print_date"
-
                             class="form-control bg-body border-secondary-subtle text-body"
-
                             value="{{ $print_date ?? date('Y-m-d') }}">
 
                     </div>
 
                     <div class="col-md-4 d-flex align-items-end gap-2">
-
                     @else
-
                         <div class="col-md-6 d-flex align-items-end gap-2">
-
                 @endif
 
                 {{-- Tombol Filter --}}
 
                 <button type="submit" class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
-
                     style="background-color: #40BF89; border: none; height: 38px;">
 
                     <i class="bi bi-filter"></i>
@@ -366,9 +352,7 @@
                 {{-- Tombol PDF --}}
 
                 @if ($attendances->count() > 0)
-
                     <a href="#" id="btn-export-pdf" class="btn btn-danger w-100 shadow-sm fw-bold text-nowrap"
-
                         style="height: 38px; display: flex; align-items: center; justify-content: center;">
 
                         <i class="bi bi-file-pdf"></i>
@@ -376,27 +360,20 @@
                         PDF
 
                     </a>
-
                 @endif
 
                 {{-- Tombol Buat Absen --}}
 
-
-
                 @unless ($isOperatorLaporan)
-<a href="{{ route('admin.laporan.createManual') }}"
+                    <a href="{{ route('admin.laporan.createManual') }}"
+                        class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
+                        style="background-color: #40BF89; border: none; height: 38px;">
 
-                    class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
+                        <i class="bi bi-plus-circle me-1"></i>
 
-                    style="background-color: #40BF89; border: none; height: 38px;">
+                        Buat Absen
 
-                    <i class="bi bi-plus-circle me-1"></i>
-
-                    Buat Absen
-
-                </a>
-
-
+                    </a>
                 @endunless
 
         </div>
@@ -406,8 +383,6 @@
     </div>
 
     </div>
-
-
 
     {{-- =========================================================
 
@@ -440,48 +415,44 @@
                 <div class="bulk-delete-toolbar">
 
                     @unless ($isOperatorLaporan)
+                        {{-- Jumlah Dipilih --}}
 
+                        <div id="bulk-delete-container">
 
-                    {{-- Jumlah Dipilih --}}
+                            <span class="badge bg-danger px-3 py-2">
 
-                    <div id="bulk-delete-container">
+                                <i class="bi bi-check2-square me-1"></i>
 
-                        <span class="badge bg-danger px-3 py-2">
+                                <span id="selected-count">0</span>
 
-                            <i class="bi bi-check2-square me-1"></i>
+                                data dipilih
 
-                            <span id="selected-count">0</span>
+                            </span>
 
-                            data dipilih
+                        </div>
 
-                        </span>
+                        {{-- Tombol Hapus --}}
 
-                    </div>
+                        <form id="form-bulk-delete" action="{{ route('admin.laporan.bulkDelete') }}" method="POST"
+                            class="m-0">
 
-                    {{-- Tombol Hapus --}}
+                            @csrf
 
-                    <form id="form-bulk-delete" action="{{ route('admin.laporan.bulkDelete') }}" method="POST"
+                            @method('DELETE')
 
-                        class="m-0">
+                            {{-- Hidden input ids[] akan dibuat melalui JavaScript --}}
 
-                        @csrf
+                            <div id="bulk-delete-inputs"></div>
 
-                        @method('DELETE')
+                            <button type="submit" id="btn-bulk-delete" class="btn btn-danger shadow-sm fw-bold" disabled>
 
-                        {{-- Hidden input ids[] akan dibuat melalui JavaScript --}}
+                                <i class="bi bi-trash3 me-1"></i>
 
-                        <div id="bulk-delete-inputs"></div>
+                                Hapus Terpilih
 
-                        <button type="submit" id="btn-bulk-delete" class="btn btn-danger shadow-sm fw-bold" disabled>
+                            </button>
 
-                            <i class="bi bi-trash3 me-1"></i>
-
-                            Hapus Terpilih
-
-                        </button>
-
-                    </form>
-
+                        </form>
                     @endunless
 
                     {{-- Jam Masuk --}}
@@ -504,8 +475,6 @@
 
         </div>
 
-
-
         {{-- CARD BODY --}}
 
         <div class="card-body">
@@ -521,16 +490,12 @@
                             {{-- Checkbox Pilih Semua --}}
 
                             @unless ($isOperatorLaporan)
+                                <th class="py-3 text-body-secondary text-center" style="width: 50px;">
 
+                                    <input type="checkbox" id="select-all-attendance" class="attendance-select-all"
+                                        title="Pilih semua">
 
-                            <th class="py-3 text-body-secondary text-center" style="width: 50px;">
-
-                                <input type="checkbox" id="select-all-attendance" class="attendance-select-all"
-
-                                    title="Pilih semua">
-
-                            </th>
-
+                                </th>
                             @endunless
 
                             {{-- No --}}
@@ -580,7 +545,9 @@
                                 Absen Pulang
 
                             </th>
+
                             {{-- Aksi (Lupa Absen + Ubah Status) --}}
+
                             @unless ($isOperatorLaporan)
                                 <th class="py-3 text-body-secondary">
 
@@ -593,8 +560,6 @@
 
                     </thead>
 
-
-
                     <tbody>
 
                         @forelse($attendances as $key => $a)
@@ -602,39 +567,33 @@
                             <tr class="attendance-row">
 
                                 {{-- =================================================
+
                                  * CHECKBOX PER DATA
+
                                  * ================================================= --}}
 
                                 @unless ($isOperatorLaporan)
-
                                     <td class="text-center">
 
                                         <input type="checkbox" name="attendance_ids[]" value="{{ $a->id }}"
-
                                             class="attendance-checkbox">
 
                                     </td>
-
-
-
                                 @endunless
 
                                 {{-- NO --}}
 
                                 <td class="text-body-secondary small">
 
-                                    {{ $key + 1 }}
+                                    {{ $attendances->firstItem() + $key }}
 
                                 </td>
-
-
 
                                 {{-- DETAIL --}}
 
                                 <td>
 
                                     <a href="{{ route('admin.laporan.detail', $a->id) }}"
-
                                         class="btn btn-sm text-white px-3 fw-medium" style="background-color: #40BF89;">
 
                                         <i class="bi bi-eye"></i>
@@ -644,8 +603,6 @@
                                     </a>
 
                                 </td>
-
-
 
                                 {{-- NAMA PEGAWAI --}}
 
@@ -676,7 +633,6 @@
                                     </small>
 
                                     @if ($a->location)
-
                                         <br>
 
                                         <small class="text-primary fw-bold" style="font-size: 0.70rem;">
@@ -686,23 +642,18 @@
                                             {{ $a->location->name }}
 
                                         </small>
-
                                     @endif
 
                                 </td>
-
-
 
                                 {{-- TIPE ABSEN --}}
 
                                 <td class="text-center">
 
                                     @if ($a->reason_change_status)
-
                                         <div class="d-flex flex-column align-items-center">
 
                                             <span
-
                                                 class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 mb-1">
 
                                                 <small class="text-decoration-line-through">
@@ -718,43 +669,31 @@
                                             </span>
 
                                         </div>
-
                                     @else
-
                                         @if ($a->tipe_absen == 'WFO')
-
                                             <span
-
                                                 class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2">
 
                                                 WFO
 
                                             </span>
-
                                         @else
-
                                             <span
-
                                                 class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2">
 
                                                 WFA
 
                                             </span>
-
                                         @endif
-
                                     @endif
 
                                 </td>
-
-
 
                                 {{-- ABSEN MASUK --}}
 
                                 <td class="text-body-secondary small">
 
                                     @if ($a->check_in_time)
-
                                         <div class="fw-bold text-body">
 
                                             {{ $a->check_in_time->format('H\\:i') }}
@@ -768,27 +707,21 @@
                                             {{ $a->check_in_time->format('d M Y') }}
 
                                         </div>
-
                                     @else
-
                                         <span class="text-muted small">
 
                                             -
 
                                         </span>
-
                                     @endif
 
                                 </td>
-
-
 
                                 {{-- ABSEN PULANG --}}
 
                                 <td class="text-body-secondary small">
 
                                     @if ($a->check_out_time)
-
                                         <div class="fw-bold text-body">
 
                                             {{ $a->check_out_time->format('H\\:i') }}
@@ -802,44 +735,37 @@
                                             {{ $a->check_out_time->format('d M Y') }}
 
                                         </div>
-
                                     @else
-
                                         <span class="text-danger small italic">
 
                                             Belum Pulang
 
                                         </span>
-
                                     @endif
 
                                 </td>
 
+                                {{-- AKSI (Lupa Absen + Ubah Status) --}}
 
-
-                                                                {{-- AKSI (Lupa Absen + Ubah Status) --}}
                                 @unless ($isOperatorLaporan)
-<td class="text-center">
+                                    <td class="text-center">
 
-                                    <span>
+                                        <span>
 
-                                        {{-- Lupa Absen --}}
+                                            {{-- Lupa Absen --}}
 
-                                        <a href="{{ route('admin.laporan.editLupaAbsen', $a->id) }}"
+                                            <a href="{{ route('admin.laporan.editLupaAbsen', $a->id) }}"
+                                                class="btn btn-sm btn-outline-warning shadow-sm me-1"
+                                                title="Lupa Absen & Ubah Koordinat">
 
-                                            class="btn btn-sm btn-outline-warning shadow-sm me-1" title="Lupa Absen & Ubah Koordinat">
+                                                <i class="bi bi-clock-history"></i>
 
-                                            <i class="bi bi-clock-history"></i>
+                                            </a>
 
-                                        </a>
+                                            {{-- Ubah Status --}}
 
-
-
-                                        {{-- Ubah Status --}}
-
-                                        <button type="button" class="btn btn-sm btn-outline-warning"
-
-                                            onclick="openEditModal(
+                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                                onclick="openEditModal(
 
                                                     '{{ route('admin.absensi.updateStatus', $a->id) }}',
 
@@ -848,16 +774,15 @@
                                                     '{{ addslashes($a->reason_change_status) }}'
 
                                                 )"
+                                                title="Ubah Status">
 
-                                            title="Ubah Status">
+                                                <i class="bi bi-pencil-square"></i>
 
-                                            <i class="bi bi-pencil-square"></i>
+                                            </button>
 
-                                        </button>
+                                        </span>
 
-                                    </span>
-
-                                </td>
+                                    </td>
                                 @endunless
 
                             </tr>
@@ -866,7 +791,8 @@
 
                             <tr>
 
-                                <td colspan="{{ $isOperatorLaporan ? 6 : 8 }}" class="text-center text-body-secondary py-5">
+                                <td colspan="{{ $isOperatorLaporan ? 6 : 8 }}"
+                                    class="text-center text-body-secondary py-5">
 
                                     <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
 
@@ -882,13 +808,32 @@
 
                 </table>
 
+                {{-- PAGINATION --}}
+                @if ($attendances->hasPages())
+                    <div class="d-flex justify-content-between align-items-center flex-wrap mt-4 gap-3">
+
+                        <div class="text-body-secondary small">
+                            Menampilkan
+                            <strong>{{ $attendances->firstItem() }}</strong>
+                            -
+                            <strong>{{ $attendances->lastItem() }}</strong>
+                            dari
+                            <strong>{{ $attendances->total() }}</strong>
+                            data
+                        </div>
+
+                        <div>
+                            {{ $attendances->links() }}
+                        </div>
+
+                    </div>
+                @endif
+
             </div>
 
         </div>
 
     </div>
-
-
 
     {{-- =========================================================
 
@@ -922,8 +867,6 @@
 
                     </div>
 
-
-
                     <div class="modal-body">
 
                         <div class="mb-3">
@@ -952,8 +895,6 @@
 
                         </div>
 
-
-
                         <div class="mb-3">
 
                             <label class="form-label">
@@ -963,7 +904,6 @@
                             </label>
 
                             <textarea id="edit_reason" name="reason_change_status" class="form-control w-100" rows="3"
-
                                 placeholder="Contoh: Kesalahan sistem saat pemilihan lokasi" required minlength="5"></textarea>
 
                             <small class="text-muted">
@@ -975,8 +915,6 @@
                         </div>
 
                     </div>
-
-
 
                     <div class="modal-footer">
 

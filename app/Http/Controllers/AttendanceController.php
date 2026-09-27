@@ -272,11 +272,13 @@ class AttendanceController extends Controller
         ));
     }
 
+
     public function report(Request $request)
     {
         $nip = $request->query('nip');
 
         $timKerjaIds = $request->query('tim_kerja_ids', []);
+
         if ($request->filled('tim_kerja_id') && empty($timKerjaIds)) {
             $timKerjaIds = [$request->query('tim_kerja_id')];
         }
@@ -284,35 +286,48 @@ class AttendanceController extends Controller
         $tipeAbsen = $request->query('tipe_absen');
         $locationId = $request->query('location_id');
 
-        $start_date = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $end_date = $request->query('end_date', Carbon::now()->toDateString());
+        $start_date = $request->query(
+            'start_date',
+            Carbon::now()->startOfMonth()->toDateString()
+        );
+
+        $end_date = $request->query(
+            'end_date',
+            Carbon::now()->toDateString()
+        );
 
         $query = Attendance::with(['user.tim_kerja', 'location']);
 
+        // Filter berdasarkan NIP / Nama
         if ($nip) {
             $query->whereHas('user', function ($q) use ($nip) {
                 if (is_numeric($nip)) {
-                    $q->where('nip', $nip)->orWhere('name', 'like', "%{$nip}%");
+                    $q->where('nip', $nip)
+                    ->orWhere('name', 'like', "%{$nip}%");
                 } else {
                     $q->where('name', 'like', "%{$nip}%");
                 }
             });
         }
 
-        if (! empty($timKerjaIds) && ! in_array('semua', $timKerjaIds)) {
+        // Filter berdasarkan Tim Kerja
+        if (!empty($timKerjaIds) && !in_array('semua', $timKerjaIds)) {
             $query->whereHas('user', function ($q) use ($timKerjaIds) {
                 $q->whereIn('tim_kerja_id', $timKerjaIds);
             });
         }
 
+        // Filter berdasarkan tipe absensi
         if ($tipeAbsen && $tipeAbsen !== 'semua') {
             $query->where('tipe_absen', $tipeAbsen);
         }
 
+        // Filter berdasarkan lokasi
         if ($locationId && $locationId !== 'semua') {
             $query->where('location_id', $locationId);
         }
 
+        // Filter berdasarkan tanggal
         if ($start_date && $end_date) {
             $query->whereBetween('created_at', [
                 Carbon::parse($start_date)->startOfDay(),
@@ -320,10 +335,15 @@ class AttendanceController extends Controller
             ]);
         }
 
-        $attendances = $query->latest()->get();
+        // Paginasi 10 data per halaman
+        $attendances = $query
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         $timKerjas = TimKerja::all();
         $locations = Location::all();
+
         $jamMasuk = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
 
         return view('admin.absensi.index', compact(
@@ -339,6 +359,8 @@ class AttendanceController extends Controller
             'locationId'
         ));
     }
+
+
 
     public function exportPdf(Request $request)
     {
