@@ -159,7 +159,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ Request::is('admin/manage-admins*') ? 'active' : '' }}"
                                     href="/admin/manage-admins">
-                                    <i class="bi bi-shield-lock me-2"></i> Kelola Admin
+                                    <i class="bi bi-shield-lock me-2"></i> Kelola Role
                                 </a>
                             </li>
                         @endif

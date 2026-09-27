@@ -1,16 +1,16 @@
 @extends('layouts.admin')
 
-@section('header', 'Kelola Admin')
+@section('header', 'Kelola Role')
 
 @section('content')
     <div class="card border-0 shadow-sm bg-body-tertiary">
         {{-- Header dengan aksen hijau SIKAWA --}}
         <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3"
             style="border-top: 5px solid #40BF89;">
-            <h5 class="mb-0 fw-bold text-body">Daftar Administrator Sistem</h5>
+            <h5 class="mb-0 fw-bold text-body">Daftar Pegawai</h5>
             <a href="{{ route('admin.manage-admins.create') }}" class="btn text-white shadow-sm fw-bold"
                 style="background-color: #40BF89; border: none;">
-                <i class="bi bi-shield-plus"></i> Tambah Admin
+                <i class="bi bi-shield-plus"></i> Tambah Super Admin atau Admin atau Operator Laporan
             </a>
         </div>
 
@@ -41,7 +41,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($admins as $key => $a)
+                        @forelse($semua_pegawai as $key => $a)
                             <tr>
                                 <td class="fw-bold text-body-secondary">{{ $key + 1 }}</td>
                                 <td>
@@ -62,7 +62,7 @@
                                             style="background-color: rgba(64, 191, 137, 0.15);
                      color: #40BF89;
                      border: 1px solid rgba(64, 191, 137, 0.4);">
-                                            Admin
+                                            {{ $a->role }}
                                         </span>
                                     @endif
                                 </td>

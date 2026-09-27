@@ -1,13 +1,13 @@
 @extends('layouts.admin')
 
-@section('header', 'Tambah Admin Baru')
+@section('header', 'Kelola Role')
 
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-6"> {{-- Lebar dikecilkan agar lebih proporsional untuk form ringkas --}}
         <div class="card border-0 shadow-sm bg-body-tertiary">
             <div class="card-header bg-transparent py-3" style="border-top: 5px solid #40BF89;">
-                <h5 class="mb-0 fw-bold text-body">Pilih Pegawai Jadi Admin</h5>
+                <h5 class="mb-0 fw-bold text-body">Pilih Pegawai</h5>
             </div>
             <div class="card-body p-4">
                 <form action="{{ route('admin.manage-admins.store') }}" method="POST">
@@ -34,8 +34,10 @@
                     <div class="mb-4">
                         <label class="form-label fw-medium text-body-secondary">Tentukan Role Akses</label>
                         <select name="role" class="form-select @error('role') is-invalid @enderror" required>
-                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin (Standar)</option>
-                            <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>Super Admin (Full Akses)</option>
+                            <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>Super Admin</option>
+                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                            <option value="pegawai" {{ old('role') == 'pegawai' ? 'selected' : '' }}>Pegawai</option>
+                            <option value="operator_laporan" {{ old('role') == 'operator_laporan' ? 'selected' : '' }}>Operator Laporan</option>
                         </select>
                         @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>

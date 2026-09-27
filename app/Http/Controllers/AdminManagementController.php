@@ -10,18 +10,18 @@ class AdminManagementController extends Controller
     // Menampilkan daftar Admin & Super Admin
     public function index()
     {
-        $admins = User::whereIn('role', ['admin', 'super_admin'])
+        $semua_pegawai = User::whereIn('role', ['admin', 'pegawai', 'operator_laporan'])
             ->orderBy('role', 'asc')
             ->get();
 
-        return view('admin.manage_admins.index', compact('admins'));
+        return view('admin.manage_admins.index', compact('semua_pegawai'));
     }
 
     // Menampilkan form tambah (pilih dari pegawai)
     public function create()
     {
         // Ambil user yang rolenya masih 'pegawai' untuk dipilih jadi admin
-        $pegawai = User::where('role', 'pegawai')
+        $pegawai = User::whereIn('role', ['admin', 'pegawai', 'operator_laporan'])
             ->orderBy('name', 'asc')
             ->get();
 
@@ -51,7 +51,7 @@ class AdminManagementController extends Controller
     public function edit($id)
     {
         // Cari user yang akan diedit, pastikan dia memang admin/super_admin
-        $admin = User::whereIn('role', ['admin', 'super_admin'])->findOrFail($id);
+        $admin = User::whereIn('role', ['admin', 'super_admin', 'pegawai', 'operator_laporan'])->findOrFail($id);
 
         return view('admin.manage_admins.edit', compact('admin'));
     }
@@ -62,7 +62,7 @@ class AdminManagementController extends Controller
 
         // Validasi diperluas untuk mencakup role 'pegawai'
         $request->validate([
-            'role' => 'required|in:super_admin,admin,pegawai',
+            'role' => 'required|in:super_admin,admin,pegawai,operator_laporan',
         ]);
 
         // Proteksi: Jangan biarkan Super Admin mengubah dirinya sendiri menjadi pegawai

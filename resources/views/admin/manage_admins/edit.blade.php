@@ -16,7 +16,7 @@
 
                         {{-- Informasi Profil (Statis) --}}
                         <div class="mb-4">
-                            <label class="form-label fw-medium text-body-secondary">Profil Administrator</label>
+                            <label class="form-label fw-medium text-body-secondary">Profil Pegawai</label>
                             <div class="p-3 rounded border bg-light-subtle">
                                 <div class="fw-bold text-body">{{ $admin->name }}</div>
                                 <div class="text-muted small">NIP: {{ $admin->nip }}</div>
@@ -28,13 +28,16 @@
                             <label class="form-label fw-medium text-body-secondary">Tingkat Hak Akses</label>
                             <select name="role" class="form-select @error('role') is-invalid @enderror" required>
                                 <option value="super_admin" {{ $admin->role == 'super_admin' ? 'selected' : '' }}>
-                                    Super Admin (Akses Penuh Sistem)
+                                    Super Admin
                                 </option>
                                 <option value="admin" {{ $admin->role == 'admin' ? 'selected' : '' }}>
-                                    Admin (Manajemen Data & Absensi)
+                                    Admin
                                 </option>
                                 <option value="pegawai" {{ $admin->role == 'pegawai' ? 'selected' : '' }}>
-                                    Pegawai (Hanya Akses User/Absensi)
+                                    Pegawai
+                                </option>
+                                <option value="operator_laporan" {{ $admin->role == 'operator_laporan' ? 'selected' : '' }}>
+                                    Operator Laporan
                                 </option>
                             </select>
                             @error('role')
