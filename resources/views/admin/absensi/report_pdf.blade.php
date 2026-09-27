@@ -5,9 +5,8 @@
     <meta charset="utf-8">
     <title>Laporan Absensi Pegawai BKK Pontianak</title>
     <style>
-        /* Konfigurasi Halaman PDF (Landscape A4) */
         @page {
-            size: A4 landscape;
+            size: A4 portrait; /* atau cukup tulis 'A4' */
             margin: 1.2cm 1cm 1.5cm 1cm;
         }
 
@@ -143,7 +142,7 @@
         <div class="header-kemenkes">Kementerian Kesehatan Republik Indonesia</div>
         <div class="header-bkk">Balai Kekarantinaan Kesehatan Kelas I Pontianak</div>
         <div class="header-address">
-            Jl. Arteri Supadio No.Km. 17, Limbung, Kec. Sungai Raya, Kabupaten Kubu Raya, Kalimantan Barat 78391
+            Jl. Jenderal Ahmad Yani, Limbung, Kec. Sungai Raya, Kabupaten Kubu Raya, Kalimantan Barat 78391
             <br>
             Whatsapp: 62 811-5672-778 <span class="separator">|</span> Website: www.bkkpontianak.id
         </div>
@@ -164,7 +163,7 @@
             </td>
         </tr>
         <tr>
-            <td><strong>Nama Pegawai</strong></td>
+            <td><strong>Nama</strong></td>
             <td>: {{ $user->name ?? 'Semua Pegawai' }}</td>
             <td><strong>Tipe Absen</strong></td>
             <td>: {{ strtoupper($tipe_filter ?? 'Semua') }}</td>

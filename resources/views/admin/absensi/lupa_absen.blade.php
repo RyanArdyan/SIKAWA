@@ -54,7 +54,7 @@
                                 <label class="form-label fw-bold text-body-secondary">Foto Presensi Masuk</label>
                                 @if($attendance->photo_path)
                                     <div class="mb-2">
-                                        <img src="{{ asset('storage/' . $attendance->photo_path) }}" alt="Foto Masuk" class="img-thumbnail rounded" style="max-height: 100px; object-fit: cover;">
+                                        <img src="{{ asset('storage/attendances/' . $attendance->photo_path) }}" alt="Foto Masuk" class="img-thumbnail rounded" style="max-height: 100px; object-fit: cover;">
                                         <small class="d-block text-muted">Foto saat ini</small>
                                     </div>
                                 @endif
@@ -130,7 +130,7 @@
                                 <label class="form-label fw-bold text-body-secondary">Foto Presensi Keluar</label>
                                 @if($attendance->photo_path_out)
                                     <div class="mb-2">
-                                        <img src="{{ asset('storage/' . $attendance->photo_path_out) }}" alt="Foto Keluar" class="img-thumbnail rounded" style="max-height: 100px; object-fit: cover;">
+                                        <img src="{{ asset('storage/attendances/' . $attendance->photo_path_out) }}" alt="Foto Keluar" class="img-thumbnail rounded" style="max-height: 100px; object-fit: cover;">
                                         <small class="d-block text-muted">Foto saat ini</small>
                                     </div>
                                 @endif

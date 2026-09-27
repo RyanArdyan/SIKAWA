@@ -272,7 +272,6 @@ class AttendanceController extends Controller
         ));
     }
 
-
     public function report(Request $request)
     {
         $nip = $request->query('nip');
@@ -303,7 +302,7 @@ class AttendanceController extends Controller
             $query->whereHas('user', function ($q) use ($nip) {
                 if (is_numeric($nip)) {
                     $q->where('nip', $nip)
-                    ->orWhere('name', 'like', "%{$nip}%");
+                        ->orWhere('name', 'like', "%{$nip}%");
                 } else {
                     $q->where('name', 'like', "%{$nip}%");
                 }
@@ -311,7 +310,7 @@ class AttendanceController extends Controller
         }
 
         // Filter berdasarkan Tim Kerja
-        if (!empty($timKerjaIds) && !in_array('semua', $timKerjaIds)) {
+        if (! empty($timKerjaIds) && ! in_array('semua', $timKerjaIds)) {
             $query->whereHas('user', function ($q) use ($timKerjaIds) {
                 $q->whereIn('tim_kerja_id', $timKerjaIds);
             });
@@ -360,8 +359,6 @@ class AttendanceController extends Controller
         ));
     }
 
-
-
     public function exportPdf(Request $request)
     {
         $nip = $request->query('nip');
@@ -402,7 +399,7 @@ class AttendanceController extends Controller
         ];
 
         $pdf = Pdf::loadView('pegawai.report_pdf', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('a4', 'portrait');
 
         // Mengubah ->download() menjadi ->stream() agar dapat dipreview langsung di browser
         return $pdf->stream('Riwayat_Absen_'.$nip.'_'.date('Ymd_His').'.pdf');
@@ -616,32 +613,54 @@ class AttendanceController extends Controller
             'status' => 'hadir',
         ];
 
-        // 3. Simpan / Ganti Foto Presensi MASUK ke storage/app/public/attendances
+        // Ambil NIP user
+        $userNip = $attendance->user->nip ?? 'pegawai';
+
+        // 3. Simpan / Ganti Foto Presensi MASUK
         if ($request->hasFile('photo_path')) {
-            // Hapus foto masuk lama jika ada di folder storage/app/public/attendances
-            if ($attendance->photo_path && Storage::disk('public')->exists($attendance->photo_path)) {
-                Storage::disk('public')->delete($attendance->photo_path);
+            // Hapus foto masuk lama dari storage jika ada
+            if ($attendance->photo_path) {
+                // Cek hapus baik jika DB berisi "attendances/file.jpg" atau hanya "file.jpg"
+                $oldPath = str_contains($attendance->photo_path, '/')
+                    ? $attendance->photo_path
+                    : 'attendances/'.$attendance->photo_path;
+
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
             }
 
             $fileIn = $request->file('photo_path');
-            $filenameIn = ($attendance->user->nip ?? 'pegawai').'_IN_'.time().'.'.$fileIn->getClientOriginalExtension();
+            $filenameIn = $userNip.'_IN_'.time().'.'.$fileIn->getClientOriginalExtension();
 
-            // Hasil simpan: "attendances/NIP_IN_123456789.jpg"
-            $updateData['photo_path'] = $fileIn->storeAs('attendances', $filenameIn, 'public');
+            // SIMPAN FISIK FILE: Tetap ke dalam folder storage/app/public/attendances
+            $fileIn->storeAs('attendances', $filenameIn, 'public');
+
+            // VALUE DATABASE: Simpan hanya nama filenya saja tanpa prefix "attendances/"
+            $updateData['photo_path'] = $filenameIn; // Hasil di DB: "123456789_IN_1790514722.png"
         }
 
-        // 4. Simpan / Ganti Foto Presensi KELUAR ke storage/app/public/attendances
+        // 4. Simpan / Ganti Foto Presensi KELUAR
         if ($request->hasFile('photo_path_out')) {
-            // Hapus foto keluar lama jika ada di folder storage/app/public/attendances
-            if ($attendance->photo_path_out && Storage::disk('public')->exists($attendance->photo_path_out)) {
-                Storage::disk('public')->delete($attendance->photo_path_out);
+            // Hapus foto keluar lama dari storage jika ada
+            if ($attendance->photo_path_out) {
+                $oldPathOut = str_contains($attendance->photo_path_out, '/')
+                    ? $attendance->photo_path_out
+                    : 'attendances/'.$attendance->photo_path_out;
+
+                if (Storage::disk('public')->exists($oldPathOut)) {
+                    Storage::disk('public')->delete($oldPathOut);
+                }
             }
 
             $fileOut = $request->file('photo_path_out');
-            $filenameOut = ($attendance->user->nip ?? 'pegawai').'_OUT_'.time().'.'.$fileOut->getClientOriginalExtension();
+            $filenameOut = $userNip.'_OUT_'.time().'.'.$fileOut->getClientOriginalExtension();
 
-            // Hasil simpan: "attendances/NIP_OUT_123456789.jpg"
-            $updateData['photo_path_out'] = $fileOut->storeAs('attendances', $filenameOut, 'public');
+            // SIMPAN FISIK FILE: Tetap ke dalam folder storage/app/public/attendances
+            $fileOut->storeAs('attendances', $filenameOut, 'public');
+
+            // VALUE DATABASE: Simpan hanya nama filenya saja tanpa prefix "attendances/"
+            $updateData['photo_path_out'] = $filenameOut; // Hasil di DB: "123456789_OUT_1790514722.png"
         }
 
         // 5. Simpan perubahan ke database
