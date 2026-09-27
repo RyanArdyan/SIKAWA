@@ -148,13 +148,21 @@
         }
     </style>
 @endpush
-
 @section('content')
 
+{{-- Cek role operator_laporan --}}
+@php
+    $isOperatorLaporan = auth()->check() && auth()->user()->role === 'operator_laporan';
+@endphp
+
     {{-- =========================================================
+
      * FORM FILTER
+
      * ========================================================= --}}
+
     <div class="card border-0 shadow-sm mb-4 bg-body-tertiary">
+
         <div class="card-body p-4">
 
             <form id="form-filter-laporan" action="{{ route('admin.absensi.report') }}" method="GET" class="row g-3">
@@ -162,45 +170,71 @@
                 {{-- BARIS 1 --}}
 
                 {{-- 1. Filter Nama/NIP --}}
+
                 <div class="col-md-3">
+
                     <label class="form-label fw-bold text-body-secondary">
+
                         Cari Pegawai
+
                     </label>
 
                     <div class="input-group">
+
                         <span class="input-group-text bg-body border-secondary-subtle border-end-0">
+
                             <i class="bi bi-search text-body-secondary"></i>
+
                         </span>
 
                         <input type="text" name="nip"
+
                             class="form-control bg-body border-secondary-subtle text-body border-start-0"
+
                             placeholder="NIP atau Nama..." value="{{ $nip ?? '' }}">
+
                     </div>
+
                 </div>
 
                 {{-- 2. Filter Tim Kerja --}}
+
                 <div class="col-md-3">
+
                     <label class="form-label fw-bold text-body-secondary">
+
                         Tim Kerja (Bisa Pilih Banyak)
+
                     </label>
 
                     <select name="tim_kerja_ids[]" id="select-tim-kerja"
+
                         class="form-select bg-body border-secondary-subtle text-body" multiple>
 
                         @foreach ($timKerjas as $tim)
+
                             <option value="{{ $tim->id }}"
+
                                 {{ in_array($tim->id, (array) ($timKerjaIds ?? [])) ? 'selected' : '' }}>
+
                                 {{ $tim->nama }}
+
                             </option>
+
                         @endforeach
 
                     </select>
+
                 </div>
 
                 {{-- 3. FILTER: Tipe Absen --}}
+
                 <div class="col-md-3">
+
                     <label class="form-label fw-bold text-body-secondary">
+
                         Tipe Absen
+
                     </label>
 
                     <select name="tipe_absen" class="form-select bg-body border-secondary-subtle text-body">
@@ -208,164 +242,258 @@
                         <option value="">Semua</option>
 
                         <option value="WFO" {{ ($tipeAbsen ?? '') == 'WFO' ? 'selected' : '' }}>
+
                             WFO
+
                         </option>
 
                         <option value="WFA" {{ ($tipeAbsen ?? '') == 'WFA' ? 'selected' : '' }}>
+
                             WFA
+
                         </option>
 
                     </select>
+
                 </div>
 
                 {{-- 4. FILTER: Lokasi Kantor --}}
+
                 <div class="col-md-3">
+
                     <label class="form-label fw-bold text-body-secondary">
+
                         Lokasi Kantor
+
                     </label>
 
                     <select name="location_id" class="form-select bg-body border-secondary-subtle text-body">
 
                         <option value="">
+
                             Semua Lokasi
+
                         </option>
 
                         @foreach ($locations as $loc)
+
                             <option value="{{ $loc->id }}" {{ ($locationId ?? '') == $loc->id ? 'selected' : '' }}>
+
                                 {{ $loc->name }}
+
                             </option>
+
                         @endforeach
 
                     </select>
+
                 </div>
 
                 {{-- BARIS 2 --}}
 
                 {{-- 5. Filter Tanggal Mulai --}}
+
                 <div class="col-md-3">
+
                     <label class="form-label fw-bold text-body-secondary">
+
                         Dari Tanggal
+
                     </label>
 
                     <input type="date" name="start_date" class="form-control bg-body border-secondary-subtle text-body"
+
                         value="{{ $start_date }}">
+
                 </div>
 
                 {{-- 6. Filter Tanggal Akhir --}}
+
                 <div class="col-md-3">
+
                     <label class="form-label fw-bold text-body-secondary">
+
                         Sampai Tanggal
+
                     </label>
 
                     <input type="date" name="end_date" class="form-control bg-body border-secondary-subtle text-body"
+
                         value="{{ $end_date }}">
+
                 </div>
 
                 {{-- 7. INPUT: Tanggal Cetak & Grup Tombol --}}
+
                 @if (auth()->check() && auth()->user()->role === 'super_admin')
+
                     <div class="col-md-2">
+
                         <label class="form-label fw-bold text-body-secondary">
+
                             Tanggal Cetak
+
                         </label>
 
                         <input type="date" name="print_date"
+
                             class="form-control bg-body border-secondary-subtle text-body"
+
                             value="{{ $print_date ?? date('Y-m-d') }}">
+
                     </div>
 
                     <div class="col-md-4 d-flex align-items-end gap-2">
+
                     @else
+
                         <div class="col-md-6 d-flex align-items-end gap-2">
+
                 @endif
 
                 {{-- Tombol Filter --}}
+
                 <button type="submit" class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
+
                     style="background-color: #40BF89; border: none; height: 38px;">
+
                     <i class="bi bi-filter"></i>
+
                     Filter
+
                 </button>
 
                 {{-- Tombol PDF --}}
+
                 @if ($attendances->count() > 0)
+
                     <a href="#" id="btn-export-pdf" class="btn btn-danger w-100 shadow-sm fw-bold text-nowrap"
+
                         style="height: 38px; display: flex; align-items: center; justify-content: center;">
+
                         <i class="bi bi-file-pdf"></i>
+
                         PDF
+
                     </a>
+
                 @endif
 
                 {{-- Tombol Buat Absen --}}
-                <a href="{{ route('admin.laporan.createManual') }}"
+
+
+
+                @unless ($isOperatorLaporan)
+<a href="{{ route('admin.laporan.createManual') }}"
+
                     class="btn text-white w-100 shadow-sm fw-bold text-nowrap"
+
                     style="background-color: #40BF89; border: none; height: 38px;">
+
                     <i class="bi bi-plus-circle me-1"></i>
+
                     Buat Absen
+
                 </a>
+
+
+                @endunless
 
         </div>
 
         </form>
 
     </div>
+
     </div>
 
 
+
     {{-- =========================================================
+
      * TABEL RIWAYAT KEHADIRAN
+
      * ========================================================= --}}
+
     <div class="card border-0 shadow-sm bg-body-tertiary">
 
         {{-- CARD HEADER --}}
+
         <div class="card-header bg-transparent py-3" style="border-top: 5px solid #40BF89;">
 
             <div class="d-flex justify-content-between align-items-center flex-wrap">
 
                 {{-- Judul --}}
+
                 <div>
+
                     <h5 class="mb-0 fw-bold text-body">
+
                         Riwayat Kehadiran
+
                     </h5>
+
                 </div>
 
                 {{-- Toolbar --}}
+
                 <div class="bulk-delete-toolbar">
 
+                    @unless ($isOperatorLaporan)
+
+
                     {{-- Jumlah Dipilih --}}
+
                     <div id="bulk-delete-container">
+
                         <span class="badge bg-danger px-3 py-2">
+
                             <i class="bi bi-check2-square me-1"></i>
 
                             <span id="selected-count">0</span>
+
                             data dipilih
+
                         </span>
+
                     </div>
 
                     {{-- Tombol Hapus --}}
+
                     <form id="form-bulk-delete" action="{{ route('admin.laporan.bulkDelete') }}" method="POST"
+
                         class="m-0">
 
                         @csrf
+
                         @method('DELETE')
 
                         {{-- Hidden input ids[] akan dibuat melalui JavaScript --}}
+
                         <div id="bulk-delete-inputs"></div>
 
                         <button type="submit" id="btn-bulk-delete" class="btn btn-danger shadow-sm fw-bold" disabled>
 
                             <i class="bi bi-trash3 me-1"></i>
+
                             Hapus Terpilih
 
                         </button>
 
                     </form>
 
+                    @endunless
+
                     {{-- Jam Masuk --}}
+
                     <span class="badge px-3 py-2" style="background-color: #40BF89;">
 
                         <i class="bi bi-clock me-1"></i>
 
                         Jam Masuk:
+
                         {{ $jamMasuk }}
+
                         WIB
 
                     </span>
@@ -377,7 +505,9 @@
         </div>
 
 
+
         {{-- CARD BODY --}}
+
         <div class="card-body">
 
             <div class="table-responsive">
@@ -389,51 +519,80 @@
                         <tr>
 
                             {{-- Checkbox Pilih Semua --}}
+
+                            @unless ($isOperatorLaporan)
+
+
                             <th class="py-3 text-body-secondary text-center" style="width: 50px;">
 
                                 <input type="checkbox" id="select-all-attendance" class="attendance-select-all"
+
                                     title="Pilih semua">
 
                             </th>
 
+                            @endunless
+
                             {{-- No --}}
+
                             <th class="py-3 text-body-secondary">
+
                                 No
+
                             </th>
 
                             {{-- Detail --}}
+
                             <th class="py-3 text-body-secondary">
+
                                 Aksi
+
                             </th>
 
                             {{-- Nama --}}
+
                             <th class="py-3 text-body-secondary">
+
                                 Nama Pegawai
+
                             </th>
 
                             {{-- Tipe --}}
+
                             <th class="py-3 text-body-secondary text-center">
+
                                 Tipe
+
                             </th>
 
                             {{-- Masuk --}}
+
                             <th class="py-3 text-body-secondary">
+
                                 Absen Masuk
+
                             </th>
 
                             {{-- Pulang --}}
-                            <th class="py-3 text-body-secondary">
-                                Absen Pulang
-                            </th>
 
-                            {{-- Aksi --}}
                             <th class="py-3 text-body-secondary">
-                                Aksi
+
+                                Absen Pulang
+
                             </th>
+                            {{-- Aksi (Lupa Absen + Ubah Status) --}}
+                            @unless ($isOperatorLaporan)
+                                <th class="py-3 text-body-secondary">
+
+                                    Aksi
+
+                                </th>
+                            @endunless
 
                         </tr>
 
                     </thead>
+
 
 
                     <tbody>
@@ -445,27 +604,41 @@
                                 {{-- =================================================
                                  * CHECKBOX PER DATA
                                  * ================================================= --}}
-                                <td class="text-center">
 
-                                    <input type="checkbox" name="attendance_ids[]" value="{{ $a->id }}"
-                                        class="attendance-checkbox">
+                                @unless ($isOperatorLaporan)
 
-                                </td>
+                                    <td class="text-center">
 
+                                        <input type="checkbox" name="attendance_ids[]" value="{{ $a->id }}"
+
+                                            class="attendance-checkbox">
+
+                                    </td>
+
+
+
+                                @endunless
 
                                 {{-- NO --}}
+
                                 <td class="text-body-secondary small">
+
                                     {{ $key + 1 }}
+
                                 </td>
+
 
 
                                 {{-- DETAIL --}}
+
                                 <td>
 
                                     <a href="{{ route('admin.laporan.detail', $a->id) }}"
+
                                         class="btn btn-sm text-white px-3 fw-medium" style="background-color: #40BF89;">
 
                                         <i class="bi bi-eye"></i>
+
                                         Detail
 
                                     </a>
@@ -473,16 +646,21 @@
                                 </td>
 
 
+
                                 {{-- NAMA PEGAWAI --}}
+
                                 <td class="fw-bold text-body">
 
                                     <div>
+
                                         {{ $a->user->name ?? 'User Terhapus' }}
+
                                     </div>
 
                                     <small class="text-muted fw-normal" style="font-size: 0.75rem;">
 
                                         NIP:
+
                                         {{ $a->user->nip ?? '-' }}
 
                                     </small>
@@ -498,6 +676,7 @@
                                     </small>
 
                                     @if ($a->location)
+
                                         <br>
 
                                         <small class="text-primary fw-bold" style="font-size: 0.70rem;">
@@ -507,18 +686,23 @@
                                             {{ $a->location->name }}
 
                                         </small>
+
                                     @endif
 
                                 </td>
 
 
+
                                 {{-- TIPE ABSEN --}}
+
                                 <td class="text-center">
 
                                     @if ($a->reason_change_status)
+
                                         <div class="d-flex flex-column align-items-center">
 
                                             <span
+
                                                 class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 mb-1">
 
                                                 <small class="text-decoration-line-through">
@@ -534,34 +718,47 @@
                                             </span>
 
                                         </div>
+
                                     @else
+
                                         @if ($a->tipe_absen == 'WFO')
+
                                             <span
+
                                                 class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2">
 
                                                 WFO
 
                                             </span>
+
                                         @else
+
                                             <span
+
                                                 class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2">
 
                                                 WFA
 
                                             </span>
+
                                         @endif
+
                                     @endif
 
                                 </td>
 
 
+
                                 {{-- ABSEN MASUK --}}
+
                                 <td class="text-body-secondary small">
 
                                     @if ($a->check_in_time)
+
                                         <div class="fw-bold text-body">
 
-                                            {{ $a->check_in_time->format('H\:i') }}
+                                            {{ $a->check_in_time->format('H\\\:i') }}
+
                                             WIB
 
                                         </div>
@@ -571,22 +768,31 @@
                                             {{ $a->check_in_time->format('d M Y') }}
 
                                         </div>
+
                                     @else
+
                                         <span class="text-muted small">
+
                                             -
+
                                         </span>
+
                                     @endif
 
                                 </td>
 
 
+
                                 {{-- ABSEN PULANG --}}
+
                                 <td class="text-body-secondary small">
 
                                     @if ($a->check_out_time)
+
                                         <div class="fw-bold text-body">
 
-                                            {{ $a->check_out_time->format('H\:i') }}
+                                            {{ $a->check_out_time->format('H\\\:i') }}
+
                                             WIB
 
                                         </div>
@@ -596,22 +802,31 @@
                                             {{ $a->check_out_time->format('d M Y') }}
 
                                         </div>
+
                                     @else
+
                                         <span class="text-danger small italic">
+
                                             Belum Pulang
+
                                         </span>
+
                                     @endif
 
                                 </td>
 
 
-                                {{-- AKSI --}}
-                                <td class="text-center">
+
+                                                                {{-- AKSI (Lupa Absen + Ubah Status) --}}
+                                @unless ($isOperatorLaporan)
+<td class="text-center">
 
                                     <span>
 
                                         {{-- Lupa Absen --}}
+
                                         <a href="{{ route('admin.laporan.editLupaAbsen', $a->id) }}"
+
                                             class="btn btn-sm btn-outline-warning shadow-sm me-1" title="Lupa Absen">
 
                                             <i class="bi bi-clock-history"></i>
@@ -619,13 +834,21 @@
                                         </a>
 
 
+
                                         {{-- Ubah Status --}}
+
                                         <button type="button" class="btn btn-sm btn-outline-warning"
+
                                             onclick="openEditModal(
+
                                                     '{{ route('admin.absensi.updateStatus', $a->id) }}',
+
                                                     '{{ $a->tipe_absen }}',
+
                                                     '{{ addslashes($a->reason_change_status) }}'
+
                                                 )"
+
                                             title="Ubah Status">
 
                                             <i class="bi bi-pencil-square"></i>
@@ -635,6 +858,7 @@
                                     </span>
 
                                 </td>
+                                @endunless
 
                             </tr>
 
@@ -642,7 +866,7 @@
 
                             <tr>
 
-                                <td colspan="9" class="text-center text-body-secondary py-5">
+                                <td colspan="{{ $isOperatorLaporan ? 6 : 8 }}" class="text-center text-body-secondary py-5">
 
                                     <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
 
@@ -665,9 +889,13 @@
     </div>
 
 
+
     {{-- =========================================================
+
      * MODAL EDIT STATUS
+
      * ========================================================= --}}
+
     <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-hidden="true">
 
         <div class="modal-dialog">
@@ -675,6 +903,7 @@
             <form id="formEditStatus" method="POST">
 
                 @csrf
+
                 @method('PUT')
 
                 <div class="modal-content">
@@ -682,13 +911,17 @@
                     <div class="modal-header">
 
                         <h5 class="modal-title">
+
                             Ubah Tipe Absensi
+
                         </h5>
 
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+
                         </button>
 
                     </div>
+
 
 
                     <div class="modal-body">
@@ -696,17 +929,23 @@
                         <div class="mb-3">
 
                             <label class="form-label">
+
                                 Tipe Absen Baru
+
                             </label>
 
                             <select name="tipe_absen" id="edit_tipe_absen" class="form-select" required>
 
                                 <option value="WFO">
+
                                     WFO (Work From Office)
+
                                 </option>
 
                                 <option value="WFA">
+
                                     WFA (Work From Anywhere)
+
                                 </option>
 
                             </select>
@@ -714,22 +953,29 @@
                         </div>
 
 
+
                         <div class="mb-3">
 
                             <label class="form-label">
+
                                 Alasan Perubahan
+
                             </label>
 
                             <textarea id="edit_reason" name="reason_change_status" class="form-control w-100" rows="3"
+
                                 placeholder="Contoh: Kesalahan sistem saat pemilihan lokasi" required minlength="5"></textarea>
 
                             <small class="text-muted">
+
                                 Wajib diisi sebagai log audit.
+
                             </small>
 
                         </div>
 
                     </div>
+
 
 
                     <div class="modal-footer">
@@ -757,6 +1003,7 @@
     </div>
 
 @endsection
+
 
 
 @push('scripts')
