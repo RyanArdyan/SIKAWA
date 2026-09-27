@@ -72,7 +72,7 @@
                             <h6 class="mb-0 fw-bold text-success"><i class="bi bi-box-arrow-in-right me-2"></i>Bukti Absen Masuk</h6>
                         </div>
                         <div class="card-body p-2 bg-light text-center">
-                            <img src="{{ asset('storage/' . $attendance->photo_path) }}"
+                            <img src="{{ asset('storage/attendances/' . $attendance->photo_path) }}"
                                  class="img-fluid rounded shadow-sm border"
                                  style="max-height: 400px; width: 100%; object-fit: cover;" alt="Foto Masuk">
                         </div>
@@ -89,7 +89,7 @@
                         </div>
                         <div class="card-body p-2 bg-light text-center d-flex align-items-center justify-content-center">
                             @if($attendance->photo_path_out)
-                                <img src="{{ asset('storage/' . $attendance->photo_path_out) }}"
+                                <img src="{{ asset('storage/attendances/' . $attendance->photo_path_out) }}"
                                      class="img-fluid rounded shadow-sm border"
                                      style="max-height: 400px; width: 100%; object-fit: cover;" alt="Foto Pulang">
                             @else
