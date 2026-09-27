@@ -757,7 +757,7 @@
 
                                         <div class="fw-bold text-body">
 
-                                            {{ $a->check_in_time->format('H\\\:i') }}
+                                            {{ $a->check_in_time->format('H\\:i') }}
 
                                             WIB
 
@@ -791,7 +791,7 @@
 
                                         <div class="fw-bold text-body">
 
-                                            {{ $a->check_out_time->format('H\\\:i') }}
+                                            {{ $a->check_out_time->format('H\\:i') }}
 
                                             WIB
 
@@ -827,7 +827,7 @@
 
                                         <a href="{{ route('admin.laporan.editLupaAbsen', $a->id) }}"
 
-                                            class="btn btn-sm btn-outline-warning shadow-sm me-1" title="Lupa Absen">
+                                            class="btn btn-sm btn-outline-warning shadow-sm me-1" title="Lupa Absen & Ubah Koordinat">
 
                                             <i class="bi bi-clock-history"></i>
 

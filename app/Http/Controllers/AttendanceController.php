@@ -562,12 +562,16 @@ class AttendanceController extends Controller
 
     public function updateLupaAbsen(Request $request, $id)
     {
-        // 1. Validasi input jam dan file foto
+        // 1. Validasi input jam, file foto, dan koordinat
         $request->validate([
             'check_in_time' => 'required',
             'check_out_time' => 'nullable',
             'photo_path' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo_path_out' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'latitude_in' => 'nullable|string|max:255',
+            'longitude_in' => 'nullable|string|max:255',
+            'latitude_out' => 'nullable|string|max:255',
+            'longitude_out' => 'nullable|string|max:255',
         ]);
 
         $attendance = Attendance::with('user')->findOrFail($id);
@@ -583,6 +587,10 @@ class AttendanceController extends Controller
         $updateData = [
             'check_in_time' => $checkInDateTime,
             'check_out_time' => $checkOutDateTime,
+            'latitude_in' => $request->latitude_in,
+            'longitude_in' => $request->longitude_in,
+            'latitude_out' => $request->latitude_out,
+            'longitude_out' => $request->longitude_out,
             'status' => 'hadir',
         ];
 
@@ -617,7 +625,7 @@ class AttendanceController extends Controller
         // 5. Simpan perubahan ke database
         $attendance->update($updateData);
 
-        return redirect()->route('admin.absensi.report')->with('success', 'Data lupa absen dan foto berhasil diperbarui.');
+        return redirect()->route('admin.absensi.report')->with('success', 'Data lupa absen, foto, dan koordinat berhasil diperbarui.');
     }
 
     public function createManual()
