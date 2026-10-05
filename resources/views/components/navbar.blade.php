@@ -20,10 +20,10 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('/') ? 'active fw-bold' : '' }}" href="/">Presensi WFA</a>
+                    <a class="nav-link {{ Request::is('wfa') ? 'active fw-bold' : '' }}" href="/wfa">Presensi WFA</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('wfo*') ? 'active fw-bold' : '' }}" href="/wfo">Presensi Kantor (WFO)</a>
+                    <a class="nav-link {{ Request::is('/') ? 'active fw-bold' : '' }}" href="/">Presensi Kantor (WFO)</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('riwayat*') ? 'active fw-bold' : '' }}" href="/riwayat">Riwayat Absen</a>

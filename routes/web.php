@@ -30,7 +30,8 @@ Route::get('/absen/success', function () {
     return view('pegawai.success');
 })->name('absen.success');
 
-Route::get('/', [AttendanceController::class, 'index'])->name('absen.home');
+Route::get('/', [WfoAttendanceController::class, 'index'])->name('absen.wfo');
+Route::get('/wfa', [AttendanceController::class, 'index'])->name('absen.home');
 Route::get('/riwayat', [AttendanceController::class, 'riwayat'])->name('absen.riwayat');
 Route::get('/riwayat/export', [AttendanceController::class, 'exportPdf'])->name('absen.exportPdf');
 Route::post('/absen/store', [AttendanceController::class, 'store'])->name('absen.store');
@@ -39,7 +40,7 @@ Route::patch('/absen/update-status/{id}', [AttendanceController::class, 'updateS
 
 // Grouping WFO
 Route::prefix('wfo')->group(function () {
-    Route::get('/', [WfoAttendanceController::class, 'index'])->name('absen.wfo');
+    // Route::get('/', [WfoAttendanceController::class, 'index'])->name('absen.wfo');
     Route::get('/get-pegawai/{nip}', [WfoAttendanceController::class, 'getPegawai']);
     Route::post('/store', [WfoAttendanceController::class, 'store'])->name('absen.storeWfo');
 });

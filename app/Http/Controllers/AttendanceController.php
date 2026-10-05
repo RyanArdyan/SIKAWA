@@ -72,14 +72,13 @@ class AttendanceController extends Controller
                     $imageName = $user->nip.'_IN_'.time().'.jpeg';
 
                     Storage::disk('public')->put('attendances/'.$imageName, base64_decode($image));
-                    $imagePath = 'attendances/'.$imageName;
+
+                    // Simpan HANYA nama file ke database
+                    $imagePath = $imageName;
                 }
 
-                // Penentuan Status Terlambat/Hadir
-                $jamMasukSetting = Setting::where('key', 'jam_masuk')->first()->value ?? '08:00';
-                $waktuMasukSesuaiJadwal = Carbon::createFromFormat('H:i', $jamMasukSetting);
-                $batasToleransi = $waktuMasukSesuaiJadwal->copy()->addMinutes(30);
-                $statusAbsen = now()->gt($batasToleransi) ? 'terlambat' : 'hadir';
+                // Status diset langsung menjadi 'hadir' tanpa cek keterlambatan
+                $statusAbsen = 'hadir';
 
                 Attendance::create([
                     'user_id' => $user->id,
@@ -94,7 +93,7 @@ class AttendanceController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Presensi Masuk Berhasil! Status: '.ucfirst($statusAbsen),
+                    'message' => 'Presensi Masuk Berhasil! Status: Hadir',
                 ]);
             }
 
@@ -117,8 +116,14 @@ class AttendanceController extends Controller
                 }
 
                 // Hapus foto keluar lama dari storage jika melakukan presensi keluar ulang (overwrite)
-                if ($attendance->photo_path_out && Storage::disk('public')->exists($attendance->photo_path_out)) {
-                    Storage::disk('public')->delete($attendance->photo_path_out);
+                if ($attendance->photo_path_out) {
+                    $oldPath = str_starts_with($attendance->photo_path_out, 'attendances/')
+                        ? $attendance->photo_path_out
+                        : 'attendances/'.$attendance->photo_path_out;
+
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
                 }
 
                 // Proses Simpan Foto Keluar Baru (OUT)
@@ -129,7 +134,9 @@ class AttendanceController extends Controller
                     $imageName = $user->nip.'_OUT_'.time().'.jpeg';
 
                     Storage::disk('public')->put('attendances/'.$imageName, base64_decode($image));
-                    $imagePathOut = 'attendances/'.$imageName;
+
+                    // Simpan HANYA nama file ke database
+                    $imagePathOut = $imageName;
                 }
 
                 // Menimpa jam keluar, foto, dan koordinat ke waktu paling akhir
