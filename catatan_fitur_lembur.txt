@@ -1,0 +1,4 @@
+1. Tambah halaman lembur karena ada pegawai yang masuk kerja jam 10 pagi lalu pulang jam 4 lalu masuk lagi jam 20:00 sampai jam 22:00
+
+Masalah:
+Saya lupa alur nya, jadi error berarti adalah alur.

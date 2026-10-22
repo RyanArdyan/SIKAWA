@@ -265,7 +265,7 @@ class AttendanceController extends Controller
                     Carbon::parse($end_date)->endOfDay(),
                 ]);
 
-                $attendances = $query->orderBy('created_at', 'desc')->get();
+                $attendances = $query->orderBy('created_at', 'asc')->get();
             }
         }
 

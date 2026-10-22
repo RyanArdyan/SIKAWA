@@ -9,6 +9,8 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\TimKerjaController;
 use App\Http\Controllers\WfoAttendanceController;
 use App\Http\Controllers\KantorController;
+use App\Http\Controllers\LemburController;
+use App\Http\Controllers\AdminLemburController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,6 +39,10 @@ Route::get('/riwayat/export', [AttendanceController::class, 'exportPdf'])->name(
 Route::post('/absen/store', [AttendanceController::class, 'store'])->name('absen.store');
 Route::post('/absen/upload-laporan', [AttendanceController::class, 'uploadLaporan'])->name('absen.uploadLaporan');
 Route::patch('/absen/update-status/{id}', [AttendanceController::class, 'updateStatus'])->name('absen.updateStatus');
+Route::get('/lembur', [LemburController::class, 'index'])->name('lembur.index');
+Route::get('/lembur/get-pegawai/{nip}', [LemburController::class, 'getPegawai'])->name('lembur.getPegawai');
+Route::post('/lembur/store', [LemburController::class, 'store'])->name('lembur.store');
+Route::post('/lembur/upload-laporan', [LemburController::class, 'uploadLaporan'])->name('lembur.uploadLaporan');
 
 // Grouping WFO
 Route::prefix('wfo')->group(function () {
@@ -69,6 +75,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // =========================================================================
     Route::middleware(['role:super_admin,admin,operator_laporan'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+
+        Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');
+        Route::get('/lembur/export-pdf', [AdminLemburController::class, 'exportPdf'])->name('lembur.exportPdf');
+        Route::get('/lembur/{id}/detail', [AdminLemburController::class, 'showDetail'])->name('lembur.detail');
     });
 
     // =========================================================================
@@ -117,6 +127,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         // Pengaturan Sistem
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
         Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+
+        Route::patch('/lembur/{id}/update-status', [AdminLemburController::class, 'updateStatus'])->name('lembur.updateStatus');
+        Route::delete('/lembur/{id}', [AdminLemburController::class, 'destroy'])->name('lembur.destroy');
+
     });
 
 });

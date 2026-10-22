@@ -26,6 +26,9 @@
                     <a class="nav-link {{ Request::is('/') ? 'active fw-bold' : '' }}" href="/">Presensi Kantor (WFO)</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {{ Request::is('lembur') ? 'active fw-bold' : '' }}" href="/lembur">Lembur</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {{ Request::is('riwayat*') ? 'active fw-bold' : '' }}" href="/riwayat">Riwayat Absen</a>
                 </li>
 
