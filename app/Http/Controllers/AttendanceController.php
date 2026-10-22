@@ -344,7 +344,7 @@ class AttendanceController extends Controller
         // Paginasi 10 data per halaman
         $attendances = $query
             ->latest()
-            ->paginate(10)
+            ->paginate(50)
             ->withQueryString();
 
         $timKerjas = TimKerja::all();

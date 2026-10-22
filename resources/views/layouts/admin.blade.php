@@ -206,6 +206,12 @@
                                     <i class="bi bi-file-earmark-text me-2"></i> Laporan Absensi
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('admin/lembur*') ? 'active' : '' }}"
+                                    href="/admin/lembur">
+                                    <i class="bi bi-clock-history me-2"></i> Laporan Lembur
+                                </a>
+                            </li>
                         @endif
 
                         {{-- 5. MENU UMUM PEGAWAI / LOGGED IN USER --}}

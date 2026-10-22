@@ -76,9 +76,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::middleware(['role:super_admin,admin,operator_laporan'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
-        Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');
-        Route::get('/lembur/export-pdf', [AdminLemburController::class, 'exportPdf'])->name('lembur.exportPdf');
-        Route::get('/lembur/{id}/detail', [AdminLemburController::class, 'showDetail'])->name('lembur.detail');
+        Route::get('/lembur', [AdminLemburController::class, 'report'])->name('lembur.report');
+        Route::get('/lembur/detail/{id}', [AdminLemburController::class, 'showDetail'])->name('lembur.detail');
+        Route::put('/lembur/update-status/{id}', [AdminLemburController::class, 'updateStatus'])->name('lembur.updateStatus');
+        Route::delete('/lembur/bulk-delete', [AdminLemburController::class, 'bulkDelete'])->name('lembur.bulkDelete');
+        Route::get('/lembur/export-pdf', [AdminLemburController::class, 'exportReportPdf'])->name('lembur.exportReportPdf');
+
     });
 
     // =========================================================================
