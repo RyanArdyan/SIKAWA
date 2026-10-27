@@ -10,8 +10,8 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AttendanceController extends Controller
 {
@@ -261,16 +261,16 @@ class AttendanceController extends Controller
                     $query->where('tipe_absen', $tipe_absen);
                 }
 
-                // Filter menggunakan waktu check-in aktual
+                // Memastikan filter rentang waktu menggunakan waktu absensi aktual (check_in_time)
                 $query->whereBetween('check_in_time', [
                     Carbon::parse($start_date)->startOfDay(),
                     Carbon::parse($end_date)->endOfDay(),
                 ]);
 
-                // Pengurutan ganda agar rapi berdasarkan tanggal lalu jam
+                // Mengurutkan data secara spesifik: Tanggal -> Jam aktual
                 $attendances = $query->orderBy(DB::raw('DATE(check_in_time)'), 'asc')
-                                     ->orderBy('check_in_time', 'asc')
-                                     ->get();;
+                    ->orderBy('check_in_time', 'asc')
+                    ->get();
             }
         }
 
@@ -390,16 +390,18 @@ class AttendanceController extends Controller
             $query->where('tipe_absen', $tipe_absen);
         }
 
+        // 1. Mengubah filter dari created_at menjadi check_in_time
         if ($start_date && $end_date) {
-            $query->whereBetween('created_at', [
+            $query->whereBetween('check_in_time', [
                 Carbon::parse($start_date)->startOfDay(),
                 Carbon::parse($end_date)->endOfDay(),
             ]);
         }
 
+        // 2. Mengurutkan data ganda berdasarkan tanggal, lalu jam aktual (check_in_time)
         $attendances = $query->orderBy(DB::raw('DATE(check_in_time)'), 'asc')
-                     ->orderBy('check_in_time', 'asc')
-                     ->get();
+            ->orderBy('check_in_time', 'asc')
+            ->get();
 
         $data = [
             'user' => $user,
