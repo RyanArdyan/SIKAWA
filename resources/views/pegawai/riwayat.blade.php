@@ -82,11 +82,9 @@
                     <thead style="background-color: #f8f9fa;">
                         <tr>
                             <th class="ps-4 py-3 text-secondary small text-uppercase" style="width: 50px;">No</th>
-                            {{-- Tambahkan ini --}}
-                            <th class="py-3 text-secondary small text-uppercase">Tanggal</th>
+                            <th class="py-3 text-secondary small text-uppercase">Waktu Check-In</th>
+                            <th class="py-3 text-secondary small text-uppercase">Waktu Check-Out</th>
                             <th class="py-3 text-secondary small text-uppercase text-center">Tipe</th>
-                            <th class="py-3 text-secondary small text-uppercase">Jam Masuk</th>
-                            <th class="py-3 text-secondary small text-uppercase">Jam Pulang</th>
                             <th class="py-3 text-secondary small text-uppercase">Status</th>
                             <th class="py-3 text-secondary small text-uppercase text-center">Aksi</th>
                         </tr>
@@ -97,9 +95,28 @@
                                 {{-- Kolom Nomor --}}
                                 <td class="ps-4 fw-medium">{{ $loop->iteration }}</td>
 
-                                {{-- Kolom Tanggal --}}
+                                {{-- Kolom Waktu Check-In --}}
                                 <td class="fw-medium">
-                                    {{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}
+                                    @if ($item->check_in_time)
+                                        {{ \Carbon\Carbon::parse($item->check_in_time)->translatedFormat('d F Y') }} <br>
+                                        <small
+                                            class="text-secondary">{{ \Carbon\Carbon::parse($item->check_in_time)->format('H:i') }}
+                                            WIB</small>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+
+                                {{-- Kolom Waktu Check-Out --}}
+                                <td class="fw-medium">
+                                    @if ($item->check_out_time)
+                                        {{ \Carbon\Carbon::parse($item->check_out_time)->translatedFormat('d F Y') }} <br>
+                                        <small
+                                            class="text-secondary">{{ \Carbon\Carbon::parse($item->check_out_time)->format('H:i') }}
+                                            WIB</small>
+                                    @else
+                                        -
+                                    @endif
                                 </td>
 
                                 {{-- Kolom Tipe (WFA/WFO) --}}
@@ -108,16 +125,6 @@
                                         class="badge {{ $item->tipe_absen == 'WFA' ? 'bg-primary' : 'bg-info' }} bg-opacity-10 {{ $item->tipe_absen == 'WFA' ? 'text-primary' : 'text-info' }} border px-2 py-1">
                                         {{ $item->tipe_absen }}
                                     </span>
-                                </td>
-
-                                {{-- Kolom Jam Masuk --}}
-                                <td class="text-secondary">
-                                    {{ $item->check_in_time ? \Carbon\Carbon::parse($item->check_in_time)->format('H:i') : '-' }}
-                                </td>
-
-                                {{-- Kolom Jam Pulang --}}
-                                <td class="text-secondary">
-                                    {{ $item->check_out_time ? \Carbon\Carbon::parse($item->check_out_time)->format('H:i') : '-' }}
                                 </td>
 
                                 {{-- Kolom Status --}}
@@ -135,6 +142,7 @@
                                     @endif
                                 </td>
 
+                                {{-- Kolom Aksi --}}
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-warning"
                                         style="border-radius: 8px;" data-bs-toggle="modal"
@@ -145,7 +153,6 @@
                             </tr>
                         @empty
                             <tr>
-                                {{-- Colspan diubah menjadi 6 karena penambahan kolom nomor --}}
                                 <td colspan="6" class="text-center py-5 text-muted">
                                     <i class="bi bi-clipboard-x fs-1 d-block mb-3 opacity-25"></i>
                                     Data absensi tidak ditemukan.
@@ -176,7 +183,8 @@
                                     <option value="WFO" {{ $item->tipe_absen == 'WFO' ? 'selected' : '' }}>WFO (Office)
                                     </option>
                                     <option value="WFA" {{ $item->tipe_absen == 'WFA' ? 'selected' : '' }}>WFA
-                                        (Anywhere)</option>
+                                        (Anywhere)
+                                    </option>
                                 </select>
                             </div>
                             <div class="mb-3">
