@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -260,12 +261,16 @@ class AttendanceController extends Controller
                     $query->where('tipe_absen', $tipe_absen);
                 }
 
-                $query->whereBetween('created_at', [
+                // Filter menggunakan waktu check-in aktual
+                $query->whereBetween('check_in_time', [
                     Carbon::parse($start_date)->startOfDay(),
                     Carbon::parse($end_date)->endOfDay(),
                 ]);
 
-                $attendances = $query->orderBy('created_at', 'asc')->get();
+                // Pengurutan ganda agar rapi berdasarkan tanggal lalu jam
+                $attendances = $query->orderBy(DB::raw('DATE(check_in_time)'), 'asc')
+                                     ->orderBy('check_in_time', 'asc')
+                                     ->get();;
             }
         }
 
@@ -392,7 +397,9 @@ class AttendanceController extends Controller
             ]);
         }
 
-        $attendances = $query->orderBy('created_at', 'asc')->get();
+        $attendances = $query->orderBy(DB::raw('DATE(check_in_time)'), 'asc')
+                     ->orderBy('check_in_time', 'asc')
+                     ->get();
 
         $data = [
             'user' => $user,
