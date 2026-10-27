@@ -1,1 +1,1 @@
-Bisa absen di banyak lokasi.
+Di halaman Laporan Lembur, setelah aku click tombol Lihat PDF, file nya tidak terbaca.

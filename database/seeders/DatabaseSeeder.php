@@ -144,6 +144,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AttendanceSeeder::class,
+            DummyDataSeeder::class,
             LemburSeeder::class,
         ]);
 

@@ -30,11 +30,11 @@ class AdminLemburController extends Controller
             $query->whereBetween('tanggal', [$start_date, $end_date]);
         }
 
-        // Filter NIP / Nama
+        // Filter NIP / Nama (Exact Match untuk keduanya)
         if ($nip) {
             $query->whereHas('user', function ($q) use ($nip) {
-                $q->where('nip', 'like', "%{$nip}%")
-                  ->orWhere('name', 'like', "%{$nip}%");
+                $q->where('nip', $nip)
+                  ->orWhere('name', $nip);
             });
         }
 

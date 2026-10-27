@@ -304,7 +304,7 @@
                                 {{-- LAPORAN PDF --}}
                                 <td class="text-center">
                                     @if ($l->laporan_pdf)
-                                        <a href="{{ asset('storage/' . $l->laporan_pdf) }}" target="_blank" class="btn btn-sm btn-outline-danger px-2 py-1">
+                                        <a href="{{ asset('storage/lemburs/' . $l->laporan_pdf) }}" target="_blank" class="btn btn-sm btn-outline-danger px-2 py-1">
                                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> lihat PDF
                                         </a>
                                     @else

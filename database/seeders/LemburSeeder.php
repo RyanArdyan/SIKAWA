@@ -21,8 +21,15 @@ class LemburSeeder extends Seeder
 
         $lemburs = [];
 
-        // Berdasarkan data di tabel users, ID yang tersedia adalah 1 sampai 5
-        $userIds = [1, 2, 3, 4, 5];
+        // 1. AMBIL ID USER SECARA DINAMIS DARI DATABASE
+        // Menghindari error foreign key constraint jika ID 1-5 tidak berurutan/tidak ada
+        $userIds = DB::table('users')->pluck('id')->toArray();
+
+        // 2. PROTEKSI: Jika tabel users kosong, hentikan proses seeder
+        if (empty($userIds)) {
+            $this->command->error('Gagal: Tabel users kosong. Jalankan seeder users terlebih dahulu!');
+            return;
+        }
 
         // Pilihan status lembur yang ada di struktur database
         $statuses = ['pending', 'disetujui', 'ditolak'];
@@ -43,13 +50,13 @@ class LemburSeeder extends Seeder
             $hasFiles = $faker->boolean(70); // 70% kemungkinan punya file
 
             $lemburs[] = [
-                'user_id'           => $faker->randomElement($userIds),
+                'user_id'           => $faker->randomElement($userIds), // Otomatis memilih ID yang valid
                 'tanggal'           => $checkIn->format('Y-m-d'),
                 'check_in_lembur'   => $checkIn->format('Y-m-d H:i:s'),
                 'check_out_lembur'  => $checkOut->format('Y-m-d H:i:s'),
-                'photo_path_in'     => $hasFiles ? 'lembur/in/' . $faker->uuid . '.jpg' : null,
-                'photo_path_out'    => $hasFiles ? 'lembur/out/' . $faker->uuid . '.jpg' : null,
-                'laporan_pdf'       => $hasFiles ? 'lembur/pdf/laporan_' . $faker->uuid . '.pdf' : null,
+                'photo_path_in'     => $hasFiles ? 'lemburs/in/' . $faker->uuid . '.jpg' : null,
+                'photo_path_out'    => $hasFiles ? 'lemburs/out/' . $faker->uuid . '.jpg' : null,
+                'laporan_pdf'       => $hasFiles ? 'lemburs/' . $faker->uuid . '.pdf' : null,
                 'keterangan_lembur' => $faker->sentence(6), // Kalimat acak untuk keterangan
                 'status'            => $faker->randomElement($statuses),
                 'created_at'        => now(),
