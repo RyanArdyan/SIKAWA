@@ -124,13 +124,8 @@ class LemburController extends Controller
                     ], 400);
                 }
 
-                // 2. CEK LAPORAN PDF (Wajib unggah sebelum keluar)
-                if (is_null($lembur->laporan_pdf)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Gagal! Anda wajib mengunggah Laporan PDF Lembur hari ini sebelum melakukan presensi Pulang Lembur.',
-                    ], 400);
-                }
+                // 2. CEK LAPORAN PDF DIHAPUS DARI SINI
+                // (Blok kode pengecekan is_null($lembur->laporan_pdf) telah dihapus)
 
                 // 3. Hapus foto keluar lama jika melakukan presensi ulang (overwrite)
                 if ($lembur->photo_path_out) {

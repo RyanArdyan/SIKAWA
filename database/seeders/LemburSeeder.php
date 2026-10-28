@@ -56,7 +56,6 @@ class LemburSeeder extends Seeder
                 'check_out_lembur'  => $checkOut->format('Y-m-d H:i:s'),
                 'photo_path_in'     => $hasFiles ? 'lemburs/in/' . $faker->uuid . '.jpg' : null,
                 'photo_path_out'    => $hasFiles ? 'lemburs/out/' . $faker->uuid . '.jpg' : null,
-                'laporan_pdf'       => $hasFiles ? 'lemburs/' . $faker->uuid . '.pdf' : null,
                 'keterangan_lembur' => $faker->sentence(6), // Kalimat acak untuk keterangan
                 'status'            => $faker->randomElement($statuses),
                 'created_at'        => now(),

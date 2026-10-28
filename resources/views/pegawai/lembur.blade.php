@@ -9,8 +9,7 @@
                 <div class="card-header text-white text-center py-4" style="background-color: #20c997; border: none;">
                     <i class="bi bi-clock-history mb-2" style="font-size: 2rem;"></i>
                     <h4 class="mb-0 fw-bold">PRESENSI LEMBUR PEGAWAI</h4>
-                    <small id="subtitle-absen" class="opacity-75">Silakan masukkan NIP dan unggah laporan lembur untuk
-                        memulai</small>
+                    <small id="subtitle-absen" class="opacity-75">Silakan masukkan NIP untuk memulai</small>
                 </div>
 
                 <div class="card-body p-4 text-center">
@@ -51,25 +50,6 @@
                         </div>
                     </div>
 
-                    {{-- CONTAINER UPLOAD LAPORAN LEMBUR --}}
-                    <div id="container-upload" class="d-none mt-4 animate__animated animate__fadeIn">
-                        <div class="card border-0 bg-light" style="border-left: 5px solid #20c997 !important;">
-                            <div class="card-body text-start">
-                                <h6 class="fw-bold mb-2" style="color: #20c997;">
-                                    <i class="bi bi-file-earmark-pdf-fill"></i> UNGGAH LAPORAN LEMBUR
-                                </h6>
-                                <p class="small text-muted">Silakan upload laporan kegiatan lembur hari ini (PDF).</p>
-                                <div class="input-group">
-                                    <input type="file" id="file-laporan" class="form-control form-control-sm"
-                                        accept=".pdf">
-                                    <button class="btn btn-sm text-white" style="background-color: #20c997;" type="button"
-                                        id="btn-upload-pdf">Kirim</button>
-                                </div>
-                                <div id="upload-status" class="small mt-2"></div>
-                            </div>
-                        </div>
-                    </div>
-
                     <p class="text-muted small mt-4 mb-0">
                         <i class="bi bi-info-circle"></i> Pastikan kamera aktif dan NIP valid sebelum melakukan presensi
                         lembur.
@@ -87,8 +67,6 @@
             const btnKeluar = document.getElementById('btn-keluar');
             const video = document.getElementById('webcam');
             const canvas = document.getElementById('canvas');
-            const containerUpload = document.getElementById('container-upload');
-            const uploadStatus = document.getElementById('upload-status');
 
             let cameraStream = null;
 
@@ -147,15 +125,11 @@
                                 namaDisplay.style.color = "#20c997";
                                 btnMasuk.disabled = false;
                                 btnKeluar.disabled = false;
-                                containerUpload.classList.remove('d-none');
-                                uploadStatus.innerHTML = "";
                             } else {
                                 namaDisplay.innerText = data.message;
                                 namaDisplay.style.color = "red";
                                 btnMasuk.disabled = true;
                                 btnKeluar.disabled = true;
-                                containerUpload.classList.add('d-none');
-                                uploadStatus.innerHTML = "";
                             }
                         })
                         .catch(err => console.error("Error Get Pegawai:", err));
@@ -163,8 +137,6 @@
                     namaDisplay.innerText = "";
                     btnMasuk.disabled = true;
                     btnKeluar.disabled = true;
-                    containerUpload.classList.add('d-none');
-                    uploadStatus.innerHTML = "";
                 }
             });
 
@@ -230,50 +202,6 @@
 
             btnMasuk.addEventListener('click', () => submitPresensiLembur('masuk'));
             btnKeluar.addEventListener('click', () => submitPresensiLembur('keluar'));
-
-            // Handler Upload Laporan PDF Lembur
-            document.getElementById('btn-upload-pdf').addEventListener('click', function() {
-                const fileInput = document.getElementById('file-laporan');
-                const btnUpload = this;
-
-                if (fileInput.files.length === 0) return alert("Pilih file PDF terlebih dahulu!");
-                if (fileInput.files[0].size > 2 * 1024 * 1024) return alert(
-                    "File PDF terlalu besar! Maksimal 2MB.");
-
-                const formData = new FormData();
-                formData.append('laporan_pdf', fileInput.files[0]);
-                formData.append('nip', nipInput.value.trim());
-
-                btnUpload.disabled = true;
-                uploadStatus.innerHTML =
-                    '<span class="text-primary d-block">Sedang mengunggah laporan lembur...</span>';
-
-                // Diubah mengarah ke rute upload laporan lembur yang baru
-                fetch('{{ route('lembur.uploadLaporan') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .getAttribute('content')
-                        },
-                        body: formData
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            window.location.reload();
-                        } else {
-                            alert(data.message);
-                            btnUpload.disabled = false;
-                            uploadStatus.innerText = "";
-                        }
-                    })
-                    .catch(err => {
-                        alert("Gagal mengunggah laporan lembur.");
-                        btnUpload.disabled = false;
-                        uploadStatus.innerText = "";
-                    });
-            });
         });
     </script>
 @endsection
