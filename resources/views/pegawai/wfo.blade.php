@@ -50,7 +50,7 @@
                     </div>
 
                     <p class="text-muted small mt-4 mb-0">
-                        <i class="bi bi-info-circle"></i> Pastikan Anda terhubung ke jaringan BKK Pontianak dan mengaktifkan Kamera.
+                        <i class="bi bi-info-circle"></i> Pastikan Anda terhubung ke jaringan BKK Pontianak dan mengaktifkan Kamera serta Lokasi (GPS).
                     </p>
                 </div>
             </div>
@@ -126,7 +126,7 @@
                 }
             });
 
-            // Eksekusi Proses Presensi (tipe: 'masuk' atau 'keluar')
+            // Eksekusi Proses Presensi dengan Pengambilan Koordinat GPS
             function submitPresensi(type) {
                 const targetBtn = type === 'masuk' ? btnMasuk : btnKeluar;
                 const originalText = targetBtn.innerHTML;
@@ -134,55 +134,92 @@
                 // Nonaktifkan kedua tombol selama proses berjalan
                 btnMasuk.disabled = true;
                 btnKeluar.disabled = true;
-                targetBtn.innerText = "Memproses...";
+                targetBtn.innerText = "Mengunci Lokasi...";
 
-                // Ambil Frame dari Video Kamera ke Canvas
-                const context = canvas.getContext('2d');
-                const width = video.videoWidth > 0 ? video.videoWidth : 640;
-                const height = video.videoHeight > 0 ? video.videoHeight : 480;
-
-                canvas.width = width;
-                canvas.height = height;
-
-                // Mirroring effect (flip horizontal)
-                context.translate(width, 0);
-                context.scale(-1, 1);
-                context.drawImage(video, 0, 0, width, height);
-
-                // Konversi gambar ke format Base64
-                const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-
-                // Kirim data ke Controller
-                fetch('{{ route('absen.storeWfo') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        nip: nipInput.value.trim(),
-                        image: imageBase64,
-                        tipe: type
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.message);
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        targetBtn.innerHTML = originalText;
-                        btnMasuk.disabled = false;
-                        btnKeluar.disabled = false;
-                    }
-                })
-                .catch(err => {
-                    console.error("Error Store WFO:", err);
-                    alert("Terjadi kesalahan sistem saat mengirim data.");
+                if (!navigator.geolocation) {
+                    alert("Fitur Geolocation (GPS) tidak didukung oleh browser Anda.");
                     targetBtn.innerHTML = originalText;
                     btnMasuk.disabled = false;
                     btnKeluar.disabled = false;
-                });
+                    return;
+                }
+
+                const gpsOptions = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+
+                        targetBtn.innerText = "Memproses Foto...";
+
+                        // Memaksa resolusi menjadi 640x480 agar payload sangat ringan
+                        const targetWidth = 640;
+                        const targetHeight = 480;
+
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+
+                        const context = canvas.getContext('2d');
+
+                        // Mirroring effect (flip horizontal)
+                        context.translate(targetWidth, 0);
+                        context.scale(-1, 1);
+                        context.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+                        // Konversi gambar ke format Base64
+                        const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+
+                        // Kirim data + koordinat lokasi ke Controller
+                        fetch('{{ route('absen.storeWfo') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                nip: nipInput.value.trim(),
+                                image: imageBase64,
+                                tipe: type,
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            alert(data.message);
+                            if (data.success) {
+                                location.reload();
+                            } else {
+                                targetBtn.innerHTML = originalText;
+                                btnMasuk.disabled = false;
+                                btnKeluar.disabled = false;
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error Store WFO:", err);
+                            alert("Terjadi kesalahan sistem saat mengirim data.");
+                            targetBtn.innerHTML = originalText;
+                            btnMasuk.disabled = false;
+                            btnKeluar.disabled = false;
+                        });
+                    },
+                    (error) => {
+                        let msg = "Akses lokasi (GPS) wajib diaktifkan untuk melakukan presensi WFO.";
+                        if (error.code === error.TIMEOUT) {
+                            msg = "Gagal mendapatkan lokasi (Timeout). Pastikan GPS Anda aktif dan periksa koneksi internet.";
+                        }
+                        alert(msg);
+                        targetBtn.innerHTML = originalText;
+                        btnMasuk.disabled = false;
+                        btnKeluar.disabled = false;
+                    },
+                    gpsOptions
+                );
             }
 
             btnMasuk.addEventListener('click', () => submitPresensi('masuk'));

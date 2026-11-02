@@ -25,7 +25,7 @@ class WfoAttendanceController extends Controller
         if (! $pegawai) {
             return response()->json([
                 'success' => false,
-                'message' => 'NIP tidak terdaftar'
+                'message' => 'NIP tidak terdaftar',
             ]);
         }
 
@@ -45,6 +45,8 @@ class WfoAttendanceController extends Controller
             'nip' => 'required',
             'image' => 'required',
             'tipe' => 'required|in:masuk,keluar',
+            'latitude' => 'nullable|numeric',  // Harus numeric karena data berupa angka desimal
+            'longitude' => 'nullable|numeric', // Harus numeric karena data berupa angka desimal
         ]);
 
         $pegawai = User::where('nip', $request->nip)->first();
@@ -53,7 +55,7 @@ class WfoAttendanceController extends Controller
         if (! $pegawai) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pegawai tidak ditemukan'
+                'message' => 'Pegawai tidak ditemukan',
             ]);
         }
 
@@ -61,10 +63,10 @@ class WfoAttendanceController extends Controller
         $image = $request->image;
         $image = str_replace('data:image/jpeg;base64,', '', $image);
         $image = str_replace(' ', '+', $image);
-        $imageName = 'wfo_' . $pegawai->nip . '_' . time() . '.jpg';
-        Storage::disk('public')->put('attendances/' . $imageName, base64_decode($image));
+        $imageName = 'wfo_'.$pegawai->nip.'_'.time().'.jpg';
+        Storage::disk('public')->put('attendances/'.$imageName, base64_decode($image));
 
-        // Cari record presensi hari ini
+        // Cari record presensi hari ini (menggunakan check_in_time)
         $attendance = Attendance::where('user_id', $pegawai->id)
             ->whereDate('check_in_time', Carbon::today())
             ->first();
@@ -83,16 +85,19 @@ class WfoAttendanceController extends Controller
                     'tipe_absen' => 'WFO',
                     'status' => 'hadir',
                     'ip_address_log' => $request->ip(),
+                    'latitude_in' => $request->latitude,
+                    'longitude_in' => $request->longitude,
                 ]);
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Berhasil Presensi Masuk WFO pada pukul ' . $now->format('H:i') . ' WIB.',
+                    'message' => 'Berhasil Presensi Masuk WFO pada pukul '.$now->format('H:i').' WIB.',
                 ]);
             }
 
             // Jika sudah ada presensi masuk hari ini, gunakan jam paling awal (abaikan penekanan tombol berikutnya)
             $jamAwal = Carbon::parse($attendance->check_in_time)->format('H:i');
+
             return response()->json([
                 'success' => true,
                 'message' => "Anda sudah mencatat presensi masuk hari ini pada pukul {$jamAwal} WIB. Jam masuk awal tetap digunakan.",
@@ -110,15 +115,17 @@ class WfoAttendanceController extends Controller
                 ]);
             }
 
-            // Menimpa jam keluar & foto keluar dengan waktu/foto yang paling akhir
+            // Menimpa jam keluar, foto keluar, & koordinat keluar dengan waktu/foto/koordinat yang paling akhir
             $attendance->update([
                 'check_out_time' => $now,
                 'photo_path_out' => $imageName,
+                'latitude_out' => $request->latitude,
+                'longitude_out' => $request->longitude,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Berhasil Presensi Keluar WFO pada pukul ' . $now->format('H:i') . ' WIB.',
+                'message' => 'Berhasil Presensi Keluar WFO pada pukul '.$now->format('H:i').' WIB.',
             ]);
         }
     }
