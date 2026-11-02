@@ -251,7 +251,6 @@
                             <th class="py-3 text-body-secondary">Nama Pegawai</th>
                             <th class="py-3 text-body-secondary text-center">Masuk Lembur</th>
                             <th class="py-3 text-body-secondary text-center">Pulang Lembur</th>
-                            <th class="py-3 text-body-secondary text-center">Laporan PDF</th>
                             <th class="py-3 text-body-secondary text-center">Status Approval</th>
                             @unless ($isOperatorLaporan)
                                 <th class="py-3 text-body-secondary text-center">Aksi</th>
@@ -298,19 +297,6 @@
                                         <div class="text-muted" style="font-size: 0.7rem;">{{ \Carbon\Carbon::parse($l->check_out_lembur)->format('d M Y') }}</div>
                                     @else
                                         <span class="text-danger small italic">Belum Pulang</span>
-                                    @endif
-                                </td>
-
-                                {{-- LAPORAN PDF --}}
-                                <td class="text-center">
-                                    @if ($l->laporan_pdf)
-                                        <a href="{{ asset('storage/lemburs/' . $l->laporan_pdf) }}" target="_blank" class="btn btn-sm btn-outline-danger px-2 py-1">
-                                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> lihat PDF
-                                        </a>
-                                    @else
-                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 fw-normal">
-                                            Belum Ada
-                                        </span>
                                     @endif
                                 </td>
 

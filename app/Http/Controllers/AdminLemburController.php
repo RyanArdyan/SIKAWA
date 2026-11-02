@@ -50,8 +50,9 @@ class AdminLemburController extends Controller
             $query->where('status', $status);
         }
 
+        // PERBAIKAN SORTING: Urutkan berdasarkan tanggal, lalu jam masuk aktual
         $lemburs = $query->orderBy('tanggal', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('check_in_lembur', 'desc')
             ->paginate(50)
             ->withQueryString();
 
@@ -161,8 +162,11 @@ class AdminLemburController extends Controller
             $query->where('status', $status);
         }
 
+        // PERBAIKAN SORTING: Urutkan berdasarkan tanggal, lalu jam masuk aktual
         // Ambil semua data (tanpa pagination) untuk dicetak
-        $lemburs = $query->orderBy('tanggal', 'asc')->get();
+        $lemburs = $query->orderBy('tanggal', 'asc')
+            ->orderBy('check_in_lembur', 'asc')
+            ->get();
 
         $pdf = Pdf::loadView('admin.lembur.pdf', compact(
             'lemburs',
