@@ -150,21 +150,22 @@
                 btnKeluar.disabled = true;
                 targetBtn.innerText = "Memproses...";
 
-                // Ambil Frame dari Video Kamera ke Canvas
-                const context = canvas.getContext('2d');
-                const width = video.videoWidth > 0 ? video.videoWidth : 640;
-                const height = video.videoHeight > 0 ? video.videoHeight : 480;
+                // Memaksa resolusi menjadi 640x480 agar payload Base64 sangat ringan
+                const targetWidth = 640;
+                const targetHeight = 480;
 
-                canvas.width = width;
-                canvas.height = height;
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                const context = canvas.getContext('2d');
 
                 // Mirroring effect (flip horizontal)
-                context.translate(width, 0);
+                context.translate(targetWidth, 0);
                 context.scale(-1, 1);
-                context.drawImage(video, 0, 0, width, height);
+                context.drawImage(video, 0, 0, targetWidth, targetHeight);
 
                 // Konversi gambar ke format Base64
-                const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                const imageBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
                 // Kirim data ke Controller menggunakan fetch
                 fetch('{{ route('lembur.store') }}', {
