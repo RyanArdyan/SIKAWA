@@ -43,6 +43,8 @@ Route::get('/lembur', [LemburController::class, 'index'])->name('lembur.index');
 Route::get('/lembur/get-pegawai/{nip}', [LemburController::class, 'getPegawai'])->name('lembur.getPegawai');
 Route::post('/lembur/store', [LemburController::class, 'store'])->name('lembur.store');
 Route::post('/lembur/upload-laporan', [LemburController::class, 'uploadLaporan'])->name('lembur.uploadLaporan');
+Route::get('/lembur/riwayat', [LemburController::class, 'riwayat'])->name('lembur.riwayat');
+Route::get('/lembur/riwayat/export', [LemburController::class, 'exportPdf'])->name('lembur.exportPdf');
 
 // Grouping WFO
 Route::prefix('wfo')->group(function () {

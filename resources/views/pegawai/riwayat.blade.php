@@ -93,7 +93,13 @@
                         @forelse($attendances as $item)
                             <tr>
                                 {{-- Kolom Nomor --}}
-                                <td class="ps-4 fw-medium">{{ $loop->iteration }}</td>
+                                <td class="ps-4 fw-medium">
+                                    @if ($attendances instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                                        {{ ($attendances->currentPage() - 1) * $attendances->perPage() + $loop->iteration }}
+                                    @else
+                                        {{ $loop->iteration }}
+                                    @endif
+                                </td>
 
                                 {{-- Kolom Waktu Check-In --}}
                                 <td class="fw-medium">
@@ -162,6 +168,15 @@
                     </tbody>
                 </table>
             </div>
+            {{-- TOMBOL PAGINASI --}}
+            @if ($attendances instanceof \Illuminate\Pagination\LengthAwarePaginator && $attendances->hasPages())
+                <div class="card-footer border-0 pt-4 pb-2 d-flex justify-content-center"
+                    style="background-color: var(--bs-card-bg);">
+                    <nav aria-label="Page navigation" class="mt-2">
+                        {{ $attendances->links('pagination::bootstrap-5') }}
+                    </nav>
+                </div>
+            @endif
         </div>
     </div>
 

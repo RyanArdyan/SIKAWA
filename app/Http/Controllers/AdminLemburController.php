@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lembur;
 use App\Models\TimKerja;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -181,4 +182,6 @@ class AdminLemburController extends Controller
         // Gunakan stream() untuk preview di browser, atau download() untuk langsung unduh
         return $pdf->stream('Laporan_Lembur_' . Carbon::now()->format('Y-m-d') . '.pdf');
     }
+
+    
 }

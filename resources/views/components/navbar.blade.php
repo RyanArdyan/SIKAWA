@@ -31,7 +31,9 @@
                 <li class="nav-item">
                     <a class="nav-link {{ Request::is('riwayat*') ? 'active fw-bold' : '' }}" href="/riwayat">Riwayat Absen</a>
                 </li>
-
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::is('lembur/riwayat*') ? 'active fw-bold' : '' }}" href="/lembur/riwayat">Riwayat Lembur</a>
+                </li>
                 <li class="nav-item ms-lg-2">
                     <button class="btn btn-link nav-link shadow-none" onclick="toggleTheme()" type="button" title="Ganti Mode Tampilan">
                         <i id="theme-icon" class="bi bi-moon-stars-fill text-white"></i>

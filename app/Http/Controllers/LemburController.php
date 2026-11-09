@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lembur;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -226,5 +227,87 @@ class LemburController extends Controller
                 'message' => 'Sistem Error: '.$e->getMessage(),
             ]);
         }
+    }
+
+    public function riwayat(Request $request)
+    {
+        $nip = $request->query('nip');
+
+        $start_date = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $end_date = $request->query('end_date', Carbon::now()->toDateString());
+
+        $lemburs = collect();
+        $user = null;
+
+        if ($nip) {
+            $user = User::where('nip', $nip)->first();
+
+            if ($user) {
+                $query = Lembur::where('user_id', $user->id);
+
+                // Filter rentang waktu berdasarkan tanggal aktual agar lembur lintas malam terbaca aman
+                $query->whereBetween('tanggal', [
+                    Carbon::parse($start_date)->startOfDay(),
+                    Carbon::parse($end_date)->endOfDay(),
+                ]);
+
+                // Urutkan berdasarkan tanggal, lalu jam masuk aktual
+                $lemburs = $query->orderBy('tanggal', 'asc')
+                    ->orderBy('check_in_lembur', 'asc')
+                    ->paginate(100)->withQueryString();
+                // paginate(100) artinya menampilkan 100 data per halaman
+                // withQueryString() agar filter (NIP, tanggal) tidak hilang saat pindah halaman
+            }
+        }
+
+        return view('pegawai.lembur_riwayat', compact(
+            'lemburs',
+            'nip',
+            'start_date',
+            'end_date',
+            'user'
+        ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $nip = $request->query('nip');
+        $start_date = $request->query('start_date');
+        $end_date = $request->query('end_date');
+
+        $user = User::with('tim_kerja')->where('nip', $nip)->first();
+
+        if (! $user) {
+            return redirect()->back()->with('error', 'Pegawai tidak ditemukan.');
+        }
+
+        $query = Lembur::where('user_id', $user->id);
+
+        if ($start_date && $end_date) {
+            $query->whereBetween('tanggal', [
+                Carbon::parse($start_date)->startOfDay(),
+                Carbon::parse($end_date)->endOfDay(),
+            ]);
+        }
+
+        // Urutkan berdasarkan tanggal, lalu jam aktual
+        // Gunakan get() tanpa paginasi karena PDF harus mencetak seluruh rentang waktu
+        $lemburs = $query->orderBy('tanggal', 'asc')
+            ->orderBy('check_in_lembur', 'asc')
+            ->get();
+
+        $data = [
+            'user' => $user,
+            'lemburs' => $lemburs,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y'),
+        ];
+
+        $pdf = Pdf::loadView('pegawai.lembur_pdf', $data)
+            ->setPaper('a4', 'portrait');
+
+        // Gunakan ->stream() untuk menampilkan pratinjau langsung di browser (seperti gambar 1)
+        return $pdf->stream('Riwayat_Lembur_'.$nip.'_'.date('Ymd_His').'.pdf');
     }
 }

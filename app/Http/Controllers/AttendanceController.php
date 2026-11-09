@@ -267,10 +267,11 @@ class AttendanceController extends Controller
                     Carbon::parse($end_date)->endOfDay(),
                 ]);
 
-                // Mengurutkan data secara spesifik: Tanggal -> Jam aktual
+                // Mengurutkan data secara spesifik: Tanggal -> Jam aktual & Paginasi 10 data per halaman
                 $attendances = $query->orderBy(DB::raw('DATE(check_in_time)'), 'asc')
                     ->orderBy('check_in_time', 'asc')
-                    ->get();
+                    ->paginate(100)
+                    ->withQueryString();
             }
         }
 
