@@ -319,12 +319,20 @@
 
                                 {{-- AKSI --}}
                                 @unless ($isOperatorLaporan)
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-success"
-                                            onclick="openEditStatusModal('{{ route('admin.lembur.updateStatus', $l->id) }}', '{{ $l->status }}')"
-                                            title="Ubah Status Approval">
-                                            <i class="bi bi-pencil-square me-1"></i> Status
-                                        </button>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            {{-- Tombol Detail Lembur --}}
+                                            <a href="{{ route('admin.lembur.detail', $l->id) }}" class="btn btn-sm btn-outline-warning d-flex align-items-center" style="border-radius: 6px;" title="Lihat Detail Lembur">
+                                                <i class="bi bi-eye me-1"></i> Detail
+                                            </a>
+
+                                            {{-- Tombol Ubah Status Approval --}}
+                                            <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center"
+                                                onclick="openEditStatusModal('{{ route('admin.lembur.updateStatus', $l->id) }}', '{{ $l->status }}')"
+                                                title="Ubah Status Approval" style="border-radius: 6px;">
+                                                <i class="bi bi-pencil-square me-1"></i> Status
+                                            </button>
+                                        </div>
                                     </td>
                                 @endunless
                             </tr>
