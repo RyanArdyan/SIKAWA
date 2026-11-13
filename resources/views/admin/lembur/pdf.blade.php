@@ -206,9 +206,6 @@
                 <th style="width: 80px;">NIP</th>
                 <th style="width: 40px;">Mulai</th>
                 <th style="width: 40px;">Selesai</th>
-                <th style="width: 45px;">Durasi</th>
-                <th>Keterangan Tugas</th>
-                <th style="width: 55px;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -258,26 +255,6 @@
                     {{-- Jam Masuk & Pulang Lembur --}}
                     <td class="text-center">{{ $checkIn ? $checkIn->format('H:i') : '-' }}</td>
                     <td class="text-center">{{ $checkOut ? $checkOut->format('H:i') : '-' }}</td>
-                    <td class="text-center">{{ $durasiKerja }}</td>
-
-                    {{-- Keterangan Lembur --}}
-                    <td>
-                        {{ $l->keterangan_lembur ?? '-' }}
-                        @if($l->laporan_pdf)
-                            <br><small style="font-style: italic; color: #555; font-size: 6.5pt;">(PDF Dilampirkan)</small>
-                        @endif
-                    </td>
-
-                    {{-- Status --}}
-                    <td class="text-center">
-                        @if($l->status == 'disetujui')
-                            <span class="status-badge" style="color: #198754;">DISETUJUI</span>
-                        @elseif($l->status == 'ditolak')
-                            <span class="status-badge" style="color: #dc3545;">DITOLAK</span>
-                        @else
-                            <span class="status-badge" style="color: #fd7e14;">PENDING</span>
-                        @endif
-                    </td>
                 </tr>
             @empty
                 <tr>

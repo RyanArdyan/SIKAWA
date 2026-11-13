@@ -185,7 +185,6 @@
                 <th style="width: 130px;">TANGGAL</th>
                 <th style="width: 110px;">MASUK</th>
                 <th style="width: 110px;">PULANG</th>
-                <th>DURASI LEMBUR</th>
             </tr>
         </thead>
         <tbody>
@@ -228,9 +227,6 @@
                     {{-- Jam Masuk & Pulang --}}
                     <td class="text-center">{{ $checkIn ? $checkIn->format('H:i') : '-' }}</td>
                     <td class="text-center">{{ $checkOut ? $checkOut->format('H:i') : '-' }}</td>
-
-                    {{-- Durasi Jam Kerja --}}
-                    <td class="text-center">{{ $durasiKerja }}</td>
                 </tr>
             @empty
                 <tr>

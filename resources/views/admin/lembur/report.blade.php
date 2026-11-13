@@ -251,7 +251,6 @@
                             <th class="py-3 text-body-secondary">Nama Pegawai</th>
                             <th class="py-3 text-body-secondary text-center">Masuk Lembur</th>
                             <th class="py-3 text-body-secondary text-center">Pulang Lembur</th>
-                            <th class="py-3 text-body-secondary text-center">Status Approval</th>
                             @unless ($isOperatorLaporan)
                                 <th class="py-3 text-body-secondary text-center">Aksi</th>
                             @endunless
@@ -300,23 +299,6 @@
                                     @endif
                                 </td>
 
-                                {{-- STATUS APPROVAL --}}
-                                <td class="text-center">
-                                    @if ($l->status == 'disetujui')
-                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2">
-                                            <i class="bi bi-check-circle me-1"></i> Disetujui
-                                        </span>
-                                    @elseif($l->status == 'ditolak')
-                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2">
-                                            <i class="bi bi-x-circle me-1"></i> Ditolak
-                                        </span>
-                                    @else
-                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2">
-                                            <i class="bi bi-clock me-1"></i> Pending
-                                        </span>
-                                    @endif
-                                </td>
-
                                 {{-- AKSI --}}
                                 @unless ($isOperatorLaporan)
                                     <td class="text-center align-middle">
@@ -325,13 +307,6 @@
                                             <a href="{{ route('admin.lembur.detail', $l->id) }}" class="btn btn-sm btn-outline-warning d-flex align-items-center" style="border-radius: 6px;" title="Lihat Detail Lembur">
                                                 <i class="bi bi-eye me-1"></i> Detail
                                             </a>
-
-                                            {{-- Tombol Ubah Status Approval --}}
-                                            <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center"
-                                                onclick="openEditStatusModal('{{ route('admin.lembur.updateStatus', $l->id) }}', '{{ $l->status }}')"
-                                                title="Ubah Status Approval" style="border-radius: 6px;">
-                                                <i class="bi bi-pencil-square me-1"></i> Status
-                                            </button>
                                         </div>
                                     </td>
                                 @endunless

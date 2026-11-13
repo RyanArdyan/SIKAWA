@@ -598,10 +598,10 @@ class AttendanceController extends Controller
 
     public function updateLupaAbsen(Request $request, $id)
     {
-        // 1. Validasi input jam, file foto, dan koordinat
+        // 1. Validasi input, hapus rule format spesifik jika tidak perlu, biarkan Laravel yang handle datetime string
         $request->validate([
-            'check_in_time' => 'required',
-            'check_out_time' => 'nullable',
+            'check_in_time' => 'required|date',
+            'check_out_time' => 'nullable|date|after_or_equal:check_in_time', // Tambahkan validasi after_or_equal opsional
             'photo_path' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo_path_out' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'latitude_in' => 'nullable|string|max:255',
@@ -612,12 +612,11 @@ class AttendanceController extends Controller
 
         $attendance = Attendance::with('user')->findOrFail($id);
 
-        // 2. Gabungkan tanggal transaksi asli agar format timestamp DB tetap akurat
-        $tanggalAbsen = Carbon::parse($attendance->created_at)->format('Y-m-d');
-
-        $checkInDateTime = Carbon::parse($tanggalAbsen.' '.$request->check_in_time);
+        // 2. Karena input dari form sudah dalam format Datetime (Y-m-dTH:i),
+        // kita bisa langsung parse menggunakan Carbon tanpa perlu gabung manual dengan tanggal 'created_at'.
+        $checkInDateTime = Carbon::parse($request->check_in_time);
         $checkOutDateTime = $request->check_out_time
-            ? Carbon::parse($tanggalAbsen.' '.$request->check_out_time)
+            ? Carbon::parse($request->check_out_time)
             : null;
 
         $updateData = [
@@ -637,7 +636,6 @@ class AttendanceController extends Controller
         if ($request->hasFile('photo_path')) {
             // Hapus foto masuk lama dari storage jika ada
             if ($attendance->photo_path) {
-                // Cek hapus baik jika DB berisi "attendances/file.jpg" atau hanya "file.jpg"
                 $oldPath = str_contains($attendance->photo_path, '/')
                     ? $attendance->photo_path
                     : 'attendances/'.$attendance->photo_path;
@@ -650,11 +648,8 @@ class AttendanceController extends Controller
             $fileIn = $request->file('photo_path');
             $filenameIn = $userNip.'_IN_'.time().'.'.$fileIn->getClientOriginalExtension();
 
-            // SIMPAN FISIK FILE: Tetap ke dalam folder storage/app/public/attendances
             $fileIn->storeAs('attendances', $filenameIn, 'public');
-
-            // VALUE DATABASE: Simpan hanya nama filenya saja tanpa prefix "attendances/"
-            $updateData['photo_path'] = $filenameIn; // Hasil di DB: "123456789_IN_1790514722.png"
+            $updateData['photo_path'] = $filenameIn;
         }
 
         // 4. Simpan / Ganti Foto Presensi KELUAR
@@ -673,11 +668,8 @@ class AttendanceController extends Controller
             $fileOut = $request->file('photo_path_out');
             $filenameOut = $userNip.'_OUT_'.time().'.'.$fileOut->getClientOriginalExtension();
 
-            // SIMPAN FISIK FILE: Tetap ke dalam folder storage/app/public/attendances
             $fileOut->storeAs('attendances', $filenameOut, 'public');
-
-            // VALUE DATABASE: Simpan hanya nama filenya saja tanpa prefix "attendances/"
-            $updateData['photo_path_out'] = $filenameOut; // Hasil di DB: "123456789_OUT_1790514722.png"
+            $updateData['photo_path_out'] = $filenameOut;
         }
 
         // 5. Simpan perubahan ke database
