@@ -8,8 +8,8 @@
 
     <style>
         /* =========================================================
-         * SELECT2 CUSTOMIZATION
-         * ========================================================= */
+                     * SELECT2 CUSTOMIZATION
+                     * ========================================================= */
         .select2-container--default .select2-selection--multiple {
             background-color: var(--bs-body-bg, #212529) !important;
             border-color: var(--bs-border-color, #495057) !important;
@@ -70,9 +70,10 @@
         }
 
         /* =========================================================
-         * BULK DELETE
-         * ========================================================= */
-        .lembur-select-checkbox, .lembur-select-all {
+                     * BULK DELETE
+                     * ========================================================= */
+        .lembur-select-checkbox,
+        .lembur-select-all {
             width: 18px;
             height: 18px;
             cursor: pointer;
@@ -106,7 +107,10 @@
         }
 
         @media (max-width: 768px) {
-            .bulk-delete-toolbar, .bulk-delete-toolbar form, #btn-bulk-delete {
+
+            .bulk-delete-toolbar,
+            .bulk-delete-toolbar form,
+            #btn-bulk-delete {
                 width: 100%;
             }
         }
@@ -140,16 +144,19 @@
                         <span class="input-group-text bg-body border-secondary-subtle border-end-0">
                             <i class="bi bi-search text-body-secondary"></i>
                         </span>
-                        <input type="text" name="nip" class="form-control bg-body border-secondary-subtle text-body border-start-0"
+                        <input type="text" name="nip"
+                            class="form-control bg-body border-secondary-subtle text-body border-start-0"
                             placeholder="NIP atau Nama..." value="{{ $nip ?? '' }}">
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Tim Kerja (Bisa Pilih Banyak)</label>
-                    <select name="tim_kerja_ids[]" id="select-tim-kerja" class="form-select bg-body border-secondary-subtle text-body" multiple>
+                    <select name="tim_kerja_ids[]" id="select-tim-kerja"
+                        class="form-select bg-body border-secondary-subtle text-body" multiple>
                         @foreach ($timKerjas as $tim)
-                            <option value="{{ $tim->id }}" {{ in_array($tim->id, (array) ($timKerjaIds ?? [])) ? 'selected' : '' }}>
+                            <option value="{{ $tim->id }}"
+                                {{ in_array($tim->id, (array) ($timKerjaIds ?? [])) ? 'selected' : '' }}>
                                 {{ $tim->nama }}
                             </option>
                         @endforeach
@@ -160,7 +167,8 @@
                     <label class="form-label fw-bold text-body-secondary">Status Lembur</label>
                     <select name="status" class="form-select bg-body border-secondary-subtle text-body">
                         <option value="">Semua Status</option>
-                        <option value="pending" {{ ($status ?? '') == 'pending' ? 'selected' : '' }}>Pending (Menunggu)</option>
+                        <option value="pending" {{ ($status ?? '') == 'pending' ? 'selected' : '' }}>Pending (Menunggu)
+                        </option>
                         <option value="disetujui" {{ ($status ?? '') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
                         <option value="ditolak" {{ ($status ?? '') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                     </select>
@@ -168,39 +176,51 @@
 
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Dari Tanggal</label>
-                    <input type="date" name="start_date" class="form-control bg-body border-secondary-subtle text-body" value="{{ $start_date }}">
+                    <input type="date" name="start_date" class="form-control bg-body border-secondary-subtle text-body"
+                        value="{{ $start_date }}">
                 </div>
 
                 {{-- BARIS 2 --}}
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-body-secondary">Sampai Tanggal</label>
-                    <input type="date" name="end_date" class="form-control bg-body border-secondary-subtle text-body" value="{{ $end_date }}">
+                    <input type="date" name="end_date" class="form-control bg-body border-secondary-subtle text-body"
+                        value="{{ $end_date }}">
                 </div>
 
                 @if (auth()->check() && auth()->user()->role === 'super_admin')
                     <div class="col-md-3">
                         <label class="form-label fw-bold text-body-secondary">Tanggal Cetak</label>
-                        <input type="date" name="print_date" class="form-control bg-body border-secondary-subtle text-body" value="{{ $print_date ?? date('Y-m-d') }}">
+                        <input type="date" name="print_date"
+                            class="form-control bg-body border-secondary-subtle text-body"
+                            value="{{ $print_date ?? date('Y-m-d') }}">
                     </div>
                     <div class="col-md-6 d-flex align-items-end gap-2">
-                @else
-                    <div class="col-md-9 d-flex align-items-end gap-2">
+                    @else
+                        <div class="col-md-9 d-flex align-items-end gap-2">
                 @endif
 
-                    <button type="submit" class="btn text-white shadow-sm fw-bold text-nowrap w-100"
-                        style="background-color: #40BF89; border: none; height: 38px; max-width: 150px;">
-                        <i class="bi bi-filter"></i> Filter
-                    </button>
+                <button type="submit" class="btn text-white shadow-sm fw-bold text-nowrap w-100"
+                    style="background-color: #40BF89; border: none; height: 38px; max-width: 150px;">
+                    <i class="bi bi-filter"></i> Filter
+                </button>
 
-                    @if ($lemburs->count() > 0)
-                        <a href="#" id="btn-export-pdf" class="btn btn-danger shadow-sm fw-bold text-nowrap w-100"
-                            style="height: 38px; max-width: 150px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-file-pdf me-1"></i> PDF
-                        </a>
-                    @endif
-                </div>
-            </form>
+                @if ($lemburs->count() > 0)
+                    <a href="#" id="btn-export-pdf" class="btn btn-danger shadow-sm fw-bold text-nowrap w-100"
+                        style="height: 38px; max-width: 150px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-file-pdf me-1"></i> PDF
+                    </a>
+                @endif
+
+                @if (auth()->check() && auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.lembur.createManual') }}"
+                        class="btn text-white shadow-sm fw-bold text-nowrap w-100"
+                        style="background-color: #40BF89; border: none; height: 38px; max-width: 150px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-plus-circle me-1"></i> Buat Lembur
+                    </a>
+                @endif
         </div>
+        </form>
+    </div>
     </div>
 
     {{-- =========================================================
@@ -224,7 +244,8 @@
                             </span>
                         </div>
 
-                        <form id="form-bulk-delete" action="{{ route('admin.lembur.bulkDelete') }}" method="POST" class="m-0">
+                        <form id="form-bulk-delete" action="{{ route('admin.lembur.bulkDelete') }}" method="POST"
+                            class="m-0">
                             @csrf
                             @method('DELETE')
                             <div id="bulk-delete-inputs"></div>
@@ -244,7 +265,8 @@
                         <tr>
                             @unless ($isOperatorLaporan)
                                 <th class="py-3 text-body-secondary text-center" style="width: 50px;">
-                                    <input type="checkbox" id="select-all-lembur" class="lembur-select-all" title="Pilih semua">
+                                    <input type="checkbox" id="select-all-lembur" class="lembur-select-all"
+                                        title="Pilih semua">
                                 </th>
                             @endunless
                             <th class="py-3 text-body-secondary">No</th>
@@ -261,7 +283,8 @@
                             <tr class="lembur-row">
                                 @unless ($isOperatorLaporan)
                                     <td class="text-center">
-                                        <input type="checkbox" name="lembur_ids[]" value="{{ $l->id }}" class="lembur-checkbox">
+                                        <input type="checkbox" name="lembur_ids[]" value="{{ $l->id }}"
+                                            class="lembur-checkbox">
                                     </td>
                                 @endunless
 
@@ -275,15 +298,18 @@
                                         NIP: {{ $l->user->nip ?? '-' }}
                                     </small><br>
                                     <small class="fw-bold" style="font-size: 0.75rem; color: #20c997;">
-                                        <i class="bi bi-people-fill small"></i> {{ $l->user->tim_kerja->nama ?? 'Tanpa Tim' }}
+                                        <i class="bi bi-people-fill small"></i>
+                                        {{ $l->user->tim_kerja->nama ?? 'Tanpa Tim' }}
                                     </small>
                                 </td>
 
                                 {{-- MASUK LEMBUR --}}
                                 <td class="text-center small">
                                     @if ($l->check_in_lembur)
-                                        <div class="fw-bold text-body">{{ \Carbon\Carbon::parse($l->check_in_lembur)->format('H:i') }} WIB</div>
-                                        <div class="text-muted" style="font-size: 0.7rem;">{{ \Carbon\Carbon::parse($l->check_in_lembur)->format('d M Y') }}</div>
+                                        <div class="fw-bold text-body">
+                                            {{ \Carbon\Carbon::parse($l->check_in_lembur)->format('H:i') }} WIB</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">
+                                            {{ \Carbon\Carbon::parse($l->check_in_lembur)->format('d M Y') }}</div>
                                     @else
                                         <span class="text-muted small">-</span>
                                     @endif
@@ -292,8 +318,10 @@
                                 {{-- PULANG LEMBUR --}}
                                 <td class="text-center small">
                                     @if ($l->check_out_lembur)
-                                        <div class="fw-bold text-body">{{ \Carbon\Carbon::parse($l->check_out_lembur)->format('H:i') }} WIB</div>
-                                        <div class="text-muted" style="font-size: 0.7rem;">{{ \Carbon\Carbon::parse($l->check_out_lembur)->format('d M Y') }}</div>
+                                        <div class="fw-bold text-body">
+                                            {{ \Carbon\Carbon::parse($l->check_out_lembur)->format('H:i') }} WIB</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">
+                                            {{ \Carbon\Carbon::parse($l->check_out_lembur)->format('d M Y') }}</div>
                                     @else
                                         <span class="text-danger small italic">Belum Pulang</span>
                                     @endif
@@ -304,16 +332,28 @@
                                     <td class="text-center align-middle">
                                         <div class="d-flex align-items-center justify-content-center gap-2">
                                             {{-- Tombol Detail Lembur --}}
-                                            <a href="{{ route('admin.lembur.detail', $l->id) }}" class="btn btn-sm btn-outline-warning d-flex align-items-center" style="border-radius: 6px;" title="Lihat Detail Lembur">
+                                            <a href="{{ route('admin.lembur.detail', $l->id) }}"
+                                                class="btn btn-sm btn-success text-white d-flex align-items-center"
+                                                style="border-radius: 6px;" title="Lihat Detail Lembur">
                                                 <i class="bi bi-eye me-1"></i> Detail
                                             </a>
+
+                                            {{-- Tombol Penyesuaian Lupa Lembur (Khusus Role Admin) --}}
+                                            @if (auth()->check() && auth()->user()->role === 'admin')
+                                                <a href="{{ route('admin.lembur.editLupaLembur', $l->id) }}"
+                                                    class="btn btn-sm btn-outline-warning d-flex align-items-center"
+                                                    style="border-radius: 6px;" title="Penyesuaian Lupa Lembur">
+                                                    <i class="bi bi-clock-history me-1"></i> Lupa Lembur
+                                                </a>
+                                            @endif
                                         </div>
                                     </td>
                                 @endunless
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $isOperatorLaporan ? 6 : 8 }}" class="text-center text-body-secondary py-5">
+                                <td colspan="{{ $isOperatorLaporan ? 6 : 8 }}"
+                                    class="text-center text-body-secondary py-5">
                                     <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
                                     Tidak ada data lembur yang ditemukan.
                                 </td>
@@ -326,7 +366,8 @@
                 @if ($lemburs->hasPages())
                     <div class="d-flex justify-content-between align-items-center flex-wrap mt-4 gap-3">
                         <div class="text-body-secondary small">
-                            Menampilkan <strong>{{ $lemburs->firstItem() }}</strong> - <strong>{{ $lemburs->lastItem() }}</strong> dari <strong>{{ $lemburs->total() }}</strong> data
+                            Menampilkan <strong>{{ $lemburs->firstItem() }}</strong> -
+                            <strong>{{ $lemburs->lastItem() }}</strong> dari <strong>{{ $lemburs->total() }}</strong> data
                         </div>
                         <div>
                             {{ $lemburs->links() }}
@@ -397,7 +438,8 @@
             function formatOptionWithCheckbox(option) {
                 if (!option.id) return option.text;
                 var isChecked = option.selected ? 'checked' : '';
-                return $('<div class="select-checkbox-item"><input type="checkbox" ' + isChecked + ' /><span>' + option.text + '</span></div>');
+                return $('<div class="select-checkbox-item"><input type="checkbox" ' + isChecked + ' /><span>' +
+                    option.text + '</span></div>');
             }
 
             function formatSelectionText(option, container) {
@@ -477,7 +519,9 @@
                         return;
                     }
 
-                    if (!confirm('Apakah Anda yakin ingin menghapus ' + selectedCheckboxes.length + ' data lembur terpilih?\n\nData yang sudah dihapus tidak dapat dikembalikan.')) {
+                    if (!confirm('Apakah Anda yakin ingin menghapus ' + selectedCheckboxes.length +
+                            ' data lembur terpilih?\n\nData yang sudah dihapus tidak dapat dikembalikan.'
+                        )) {
                         e.preventDefault();
                         return;
                     }

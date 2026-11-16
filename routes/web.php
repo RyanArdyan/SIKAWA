@@ -1,16 +1,16 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminLemburController;
 use App\Http\Controllers\AdminManagementController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\KantorController;
+use App\Http\Controllers\LemburController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\TimKerjaController;
 use App\Http\Controllers\WfoAttendanceController;
-use App\Http\Controllers\KantorController;
-use App\Http\Controllers\LemburController;
-use App\Http\Controllers\AdminLemburController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +39,7 @@ Route::get('/riwayat/export', [AttendanceController::class, 'exportPdf'])->name(
 Route::post('/absen/store', [AttendanceController::class, 'store'])->name('absen.store');
 Route::post('/absen/upload-laporan', [AttendanceController::class, 'uploadLaporan'])->name('absen.uploadLaporan');
 Route::patch('/absen/update-status/{id}', [AttendanceController::class, 'updateStatus'])->name('absen.updateStatus');
+
 Route::get('/lembur', [LemburController::class, 'index'])->name('lembur.index');
 Route::get('/lembur/get-pegawai/{nip}', [LemburController::class, 'getPegawai'])->name('lembur.getPegawai');
 Route::post('/lembur/store', [LemburController::class, 'store'])->name('lembur.store');
@@ -48,7 +49,6 @@ Route::get('/lembur/riwayat/export', [LemburController::class, 'exportPdf'])->na
 
 // Grouping WFO
 Route::prefix('wfo')->group(function () {
-    // Route::get('/', [WfoAttendanceController::class, 'index'])->name('absen.wfo');
     Route::get('/get-pegawai/{nip}', [WfoAttendanceController::class, 'getPegawai']);
     Route::post('/store', [WfoAttendanceController::class, 'store'])->name('absen.storeWfo');
 });
@@ -73,17 +73,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
     // =========================================================================
-    // Dashboard Utama (Bisa diakses oleh Semua Role Admin)
+    // Dashboard Utama & Laporan Lembur Read-Only (Semua Role Admin)
     // =========================================================================
     Route::middleware(['role:super_admin,admin,operator_laporan'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
+        // Laporan Lembur (Read-Only & Export PDF)
         Route::get('/lembur', [AdminLemburController::class, 'report'])->name('lembur.report');
-        Route::get('/lembur/detail/{id}', [AdminLemburController::class, 'showDetail'])->name('lembur.detail');
-        Route::put('/lembur/update-status/{id}', [AdminLemburController::class, 'updateStatus'])->name('lembur.updateStatus');
-        Route::delete('/lembur/bulk-delete', [AdminLemburController::class, 'bulkDelete'])->name('lembur.bulkDelete');
         Route::get('/lembur/export-pdf', [AdminLemburController::class, 'exportReportPdf'])->name('lembur.exportReportPdf');
-
+        Route::get('/lembur/detail/{id}', [AdminLemburController::class, 'showDetail'])->name('lembur.detail');
     });
 
     // =========================================================================
@@ -96,7 +94,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // =========================================================================
     // 2. KHUSUS OPERATOR LAPORAN & ADMIN
-    // Fitur: Melihat Laporan & Export PDF (Read-Only)
+    // Fitur: Melihat Laporan Absensi & Export PDF (Read-Only)
     // =========================================================================
     Route::middleware(['role:admin,operator_laporan'])->group(function () {
         Route::get('/laporan', [AttendanceController::class, 'report'])->name('absensi.report');
@@ -122,6 +120,14 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::delete('/absensi/hapus-massal', [AttendanceController::class, 'processDelete'])->name('absensi.processDelete');
         Route::put('/absensi/update-status/{id}', [AttendanceController::class, 'updateStatus'])->name('absensi.updateStatus');
 
+        // Kelola Approval & Hapus Data Lembur
+        Route::get('/lembur/create-manual', [AdminLemburController::class, 'createManual'])->name('lembur.createManual');
+        Route::post('/lembur/store-manual', [AdminLemburController::class, 'storeManual'])->name('lembur.storeManual');
+        Route::get('/lembur/{id}/lupa-lembur', [AdminLemburController::class, 'editLupaLembur'])->name('lembur.editLupaLembur');
+        Route::put('/lembur/{id}/update-lupa-lembur', [AdminLemburController::class, 'updateLupaLembur'])->name('lembur.updateLupaLembur');
+        Route::match(['put', 'patch'], '/lembur/update-status/{id}', [AdminLemburController::class, 'updateStatus'])->name('lembur.updateStatus');
+        Route::delete('/lembur/bulk-delete', [AdminLemburController::class, 'bulkDelete'])->name('lembur.bulkDelete');
+
         // Master Data (CRUD Pegawai, Tim Kerja, Lokasi, Kantor)
         Route::resource('pegawai', PegawaiController::class);
         Route::put('/pegawai/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('pegawai.resetPassword');
@@ -132,10 +138,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         // Pengaturan Sistem
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
         Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
-
-        Route::patch('/lembur/{id}/update-status', [AdminLemburController::class, 'updateStatus'])->name('lembur.updateStatus');
-        Route::delete('/lembur/{id}', [AdminLemburController::class, 'destroy'])->name('lembur.destroy');
-
     });
 
 });
